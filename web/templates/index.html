@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #37352f;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #37352f;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #9b9a97;
+        }
+
+        /* Search */
+        .search-container {
+            position: relative;
+            margin-bottom: 48px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-family: inherit;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #37352f;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: #37352f;
+            box-shadow: 0 0 0 3px rgba(55, 53, 47, 0.08);
+        }
+
+        .search-input::placeholder {
+            color: #c4c3bf;
+        }
+
+        .search-hint {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #c4c3bf;
+            background: #f7f6f3;
+            padding: 3px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* Autocomplete dropdown */
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e3e2de;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            z-index: 100;
+            max-height: 320px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .autocomplete-list.visible {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.1s;
+        }
+
+        .autocomplete-item:hover,
+        .autocomplete-item.active {
+            background: #f7f6f3;
+        }
+
+        .autocomplete-symbol {
+            font-weight: 600;
+            font-size: 14px;
+            color: #37352f;
+            min-width: 110px;
+        }
+
+        .autocomplete-name {
+            font-size: 13px;
+            color: #9b9a97;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .autocomplete-item:first-child {
+            border-radius: 0;
+        }
+
+        .autocomplete-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 32px;
+            color: #9b9a97;
+            font-size: 15px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        /* Results layout */
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .stock-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e3e2de;
+        }
+
+        .stock-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .category-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #9b9a97;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0efec;
+        }
+
+        /* Cards */
+        .section-card {
+            background: #ffffff;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+
+        .section-card.summary-card {
+            border: 2px solid #37352f;
+            background: #fbfbfa;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-header {
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #37352f;
+            background: #fbfbfa;
+            border-bottom: 1px solid #f0efec;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: #f7f6f3;
+        }
+
+        .section-header .chevron {
+            font-size: 10px;
+            color: #9b9a97;
+            transition: transform 0.2s;
+        }
+
+        .section-card.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .section-card.collapsed .section-body {
+            display: none;
+        }
+
+        .section-body {
+            padding: 4px 0;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            transition: background 0.1s;
+        }
+
+        .metric-row:hover {
+            background: #fbfbfa;
+        }
+
+        .metric-label {
+            color: #6b6b6b;
+            flex-shrink: 0;
+        }
+
+        .metric-value {
+            font-weight: 500;
+            text-align: right;
+            color: #37352f;
+        }
+
+        /* Signal colors */
+        .signal-bullish {
+            color: #0f7b3f;
+        }
+
+        .signal-bearish {
+            color: #c4314b;
+        }
+
+        .signal-neutral {
+            color: #9b9a97;
+        }
+
+        /* Summary badge */
+        .summary-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-bullish {
+            background: #dbf3e6;
+            color: #0f7b3f;
+        }
+
+        .badge-bearish {
+            background: #fce4e8;
+            color: #c4314b;
+        }
+
+        .badge-neutral {
+            background: #f0efec;
+            color: #6b6b6b;
+        }
+
+        /* Error */
+        .error-message {
+            padding: 16px 20px;
+            background: #fce4e8;
+            color: #c4314b;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            animation: fadeSlideIn 0.3s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 32px 20px;
+            }
+            .header h1 {
+                font-size: 28px;
+            }
+            .search-input {
+                font-size: 16px;
+                padding: 14px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stock Analyzer</h1>
+            <p>Technical & fundamental analysis for NSE-listed Indian stocks</p>
+        </div>
+
+        <div class="search-container">
+            <input
+                type="text"
+                class="search-input"
+                id="symbolInput"
+                placeholder="Enter stock symbol (e.g. RELIANCE, TCS, INFY)"
+                autocomplete="off"
+                spellcheck="false"
+            >
+            <span class="search-hint">Enter ↵</span>
+            <div class="autocomplete-list" id="autocompleteList"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <span>Fetching data<span class="loading-dots"></span></span>
+        </div>
+
+        <div class="results" id="results">
+            <div class="stock-header" id="stockHeader">
+                <h2 id="stockName"></h2>
+            </div>
+            <div id="technicalLabel"></div>
+            <div id="technicalSections"></div>
+            <div id="fundamentalLabel"></div>
+            <div id="fundamentalSections"></div>
+            <div id="piotroskiLabel"></div>
+            <div id="piotroskiSections"></div>
+            <div id="canslimLabel"></div>
+            <div id="canslimSections"></div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('symbolInput');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const stockName = document.getElementById('stockName');
+        const technicalLabel = document.getElementById('technicalLabel');
+        const technicalSections = document.getElementById('technicalSections');
+        const fundamentalLabel = document.getElementById('fundamentalLabel');
+        const fundamentalSections = document.getElementById('fundamentalSections');
+        const piotroskiLabel = document.getElementById('piotroskiLabel');
+        const piotroskiSections = document.getElementById('piotroskiSections');
+        const canslimLabel = document.getElementById('canslimLabel');
+        const canslimSections = document.getElementById('canslimSections');
+        const autocompleteList = document.getElementById('autocompleteList');
+
+        let currentSource = null;
+        let searchTimeout = null;
+        let activeIndex = -1;
+        let suggestions = [];
+
+        // Autocomplete: fetch suggestions as user types
+        input.addEventListener('input', () => {
+            const query = input.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length < 1) {
+                hideAutocomplete();
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    suggestions = await res.json();
+                    activeIndex = -1;
+                    renderAutocomplete(suggestions);
+                } catch (_) {
+                    hideAutocomplete();
+                }
+            }, 100);
+        });
+
+        // Keyboard navigation in dropdown
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (suggestions.length > 0) {
+                    activeIndex = Math.min(activeIndex + 1, suggestions.length - 1);
+                    highlightItem();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (suggestions.length > 0) {
+                    activeIndex = Math.max(activeIndex - 1, 0);
+                    highlightItem();
+                }
+            } else if (e.key === 'Enter') {
+                hideAutocomplete();
+                if (activeIndex >= 0 && suggestions[activeIndex]) {
+                    input.value = suggestions[activeIndex].symbol;
+                }
+                const symbol = input.value.trim().toUpperCase();
+                if (symbol) {
+                    startAnalysis(symbol);
+                }
+            } else if (e.key === 'Escape') {
+                hideAutocomplete();
+            }
+        });
+
+        // Close dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                hideAutocomplete();
+            }
+        });
+
+        function renderAutocomplete(items) {
+            if (items.length === 0) {
+                hideAutocomplete();
+                return;
+            }
+            autocompleteList.innerHTML = items.map((item, i) => `
+                <div class="autocomplete-item${i === activeIndex ? ' active' : ''}" data-index="${i}">
+                    <span class="autocomplete-symbol">${escapeHtml(item.symbol)}</span>
+                    <span class="autocomplete-name">${escapeHtml(item.name)}</span>
+                </div>
+            `).join('');
+
+            autocompleteList.querySelectorAll('.autocomplete-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const idx = parseInt(el.dataset.index);
+                    input.value = suggestions[idx].symbol;
+                    hideAutocomplete();
+                    startAnalysis(suggestions[idx].symbol);
+                });
+            });
+
+            autocompleteList.classList.add('visible');
+        }
+
+        function highlightItem() {
+            autocompleteList.querySelectorAll('.autocomplete-item').forEach((el, i) => {
+                el.classList.toggle('active', i === activeIndex);
+            });
+        }
+
+        function hideAutocomplete() {
+            autocompleteList.classList.remove('visible');
+            suggestions = [];
+            activeIndex = -1;
+        }
+
+        function startAnalysis(symbol) {
+            // Cleanup previous
+            if (currentSource) {
+                currentSource.close();
+            }
+            technicalSections.innerHTML = '';
+            fundamentalSections.innerHTML = '';
+            piotroskiSections.innerHTML = '';
+            canslimSections.innerHTML = '';
+            technicalLabel.innerHTML = '';
+            fundamentalLabel.innerHTML = '';
+            piotroskiLabel.innerHTML = '';
+            canslimLabel.innerHTML = '';
+
+            stockName.textContent = symbol;
+            loading.classList.add('active');
+            results.classList.add('active');
+
+            let technicalStarted = false;
+            let fundamentalStarted = false;
+            let piotroskiStarted = false;
+            let canslimStarted = false;
+
+            const source = new EventSource(`/api/analyze/${encodeURIComponent(symbol)}`);
+            currentSource = source;
+
+            const categoryConfig = {
+                technical:    { started: false, label: technicalLabel,    sections: technicalSections,    title: 'Technical Analysis' },
+                fundamental:  { started: false, label: fundamentalLabel,  sections: fundamentalSections,  title: 'Fundamental Analysis' },
+                piotroski:    { started: false, label: piotroskiLabel,    sections: piotroskiSections,    title: 'Piotroski F-Score' },
+                canslim:      { started: false, label: canslimLabel,      sections: canslimSections,      title: 'CAN SLIM Analysis' },
+            };
+
+            source.addEventListener('section', (e) => {
+                loading.classList.remove('active');
+                const data = JSON.parse(e.data);
+
+                const cat = categoryConfig[data.category];
+                if (cat && !cat.started) {
+                    cat.started = true;
+                    cat.label.innerHTML = `<div class="category-title">${cat.title}</div>`;
+                }
+
+                const container = cat ? cat.sections : fundamentalSections;
+                container.appendChild(createSectionCard(data));
+            });
+
+            source.addEventListener('error', (e) => {
+                loading.classList.remove('active');
+                // SSE error event — check if it's a custom error or connection error
+                // Custom errors come through the 'error' event listener below
+            });
+
+            source.addEventListener('error', (e) => {
+                // Try to parse as custom error
+                try {
+                    if (e.data) {
+                        const data = JSON.parse(e.data);
+                        showError(data.message);
+                    }
+                } catch (_) {}
+                source.close();
+            });
+
+            source.addEventListener('done', () => {
+                loading.classList.remove('active');
+                source.close();
+            });
+        }
+
+        function createSectionCard(data) {
+            const card = document.createElement('div');
+            const isSummary = data.is_summary;
+            card.className = `section-card${isSummary ? ' summary-card' : ''}`;
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'section-header';
+            header.innerHTML = `<span class="chevron">▼</span> ${escapeHtml(data.section)}`;
+            header.addEventListener('click', () => {
+                card.classList.toggle('collapsed');
+            });
+
+            // Body
+            const body = document.createElement('div');
+            body.className = 'section-body';
+
+            for (const row of data.rows) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'metric-row';
+
+                const signalClass = row.signal ? `signal-${row.signal}` : '';
+
+                if (isSummary) {
+                    rowEl.innerHTML = `
+                        <span class="metric-label">${escapeHtml(row.label)}</span>
+                        <span class="summary-badge badge-${row.signal || 'neutral'}">${escapeHtml(row.value)}</span>
+                    `;
+                } else {
+                    rowEl.innerHTML = `
+                        <span class="metric-label">${escapeHtml(row.label)}</span>
+                        <span class="metric-value ${signalClass}">${escapeHtml(row.value)}</span>
+                    `;
+                }
+
+                body.appendChild(rowEl);
+            }
+
+            card.appendChild(header);
+            card.appendChild(body);
+            return card;
+        }
+
+        function showError(message) {
+            const el = document.createElement('div');
+            el.className = 'error-message';
+            el.textContent = message;
+            results.insertBefore(el, results.firstChild.nextSibling);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-focus
+        input.focus();
+    </script>
+</body>
+</html>
