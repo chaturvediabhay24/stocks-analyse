@@ -9,6 +9,7 @@ where signal is one of: "bullish", "bearish", "neutral", "info", or None.
 import ta
 from core.data_fetcher import fetch_stock_data, fetch_stock_info, fetch_stock_financials
 from core.markets import get_market_config
+from core import cache
 
 
 def _fmt(value, prefix="", suffix="", decimals=2):
@@ -935,8 +936,14 @@ def canslim_analysis(symbol: str, market: str = "IN"):
     index_symbol = config["index"]
     index_label = "Nifty 50" if market.upper() == "IN" else "S&P 500"
     try:
-        index_ticker = yf.Ticker(index_symbol)
-        index_df = index_ticker.history(period="6mo")
+        cached_index = cache.get("index_data", index_symbol, market, period="6mo")
+        if cached_index is not None:
+            index_df = cached_index
+        else:
+            index_ticker = yf.Ticker(index_symbol)
+            index_df = index_ticker.history(period="6mo")
+            if not index_df.empty:
+                cache.set("index_data", index_symbol, market, index_df, period="6mo")
         if not index_df.empty:
             index_close = index_df["Close"]
             index_sma50 = index_close.rolling(window=50).mean().iloc[-1]
