@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from sse_starlette.sse import EventSourceResponse
 
@@ -126,6 +126,14 @@ async def list_groups(market: str = "IN"):
     return get_groups(market)
 
 
+@app.get("/api/groups/{group_id}/symbols")
+async def group_symbols(group_id: str, market: str = "IN"):
+    group = get_group(market, group_id)
+    if not group:
+        return {"error": f"Group '{group_id}' not found for market '{market}'"}
+    return {"symbols": group["symbols"]}
+
+
 @app.get("/api/groups/{group_id}/magic-formula")
 async def group_magic_formula(group_id: str, market: str = "IN"):
     group = get_group(market, group_id)
@@ -135,6 +143,43 @@ async def group_magic_formula(group_id: str, market: str = "IN"):
     async def event_stream():
         try:
             for event in magic_formula(group["symbols"], market=market):
+                if event["type"] == "progress":
+                    yield {
+                        "event": "progress",
+                        "data": json.dumps(event),
+                    }
+                elif event["type"] == "result":
+                    yield {
+                        "event": "result",
+                        "data": json.dumps(event),
+                    }
+        except Exception as e:
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": str(e)}),
+            }
+            return
+
+        yield {
+            "event": "done",
+            "data": json.dumps({"status": "complete"}),
+        }
+
+    return EventSourceResponse(event_stream())
+
+
+@app.post("/api/magic-formula")
+async def custom_magic_formula(request: Request):
+    body = await request.json()
+    symbols = body.get("symbols", [])
+    market = body.get("market", "IN")
+
+    if not symbols:
+        return {"error": "No symbols provided"}
+
+    async def event_stream():
+        try:
+            for event in magic_formula(symbols, market=market):
                 if event["type"] == "progress":
                     yield {
                         "event": "progress",

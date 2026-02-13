@@ -335,6 +335,112 @@
             color: #c4314b;
         }
 
+        /* Stock editor */
+        .stock-editor {
+            display: none;
+            margin-bottom: 24px;
+            padding: 20px;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+            background: #fbfbfa;
+        }
+
+        .stock-editor.active {
+            display: block;
+            animation: fadeSlideIn 0.3s ease-out;
+        }
+
+        .stock-editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .stock-editor-header span {
+            font-size: 13px;
+            color: #9b9a97;
+        }
+
+        .stock-editor-header strong {
+            font-size: 14px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .stock-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stock-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #ffffff;
+            border: 1px solid #e3e2de;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #37352f;
+        }
+
+        .stock-chip .remove-chip {
+            cursor: pointer;
+            color: #9b9a97;
+            font-size: 14px;
+            line-height: 1;
+            margin-left: 2px;
+            transition: color 0.15s;
+        }
+
+        .stock-chip .remove-chip:hover {
+            color: #c4314b;
+        }
+
+        .stock-add-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stock-add-row input {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 12px;
+            border: 1px solid #e3e2de;
+            border-radius: 4px;
+            outline: none;
+            width: 160px;
+            text-transform: uppercase;
+        }
+
+        .stock-add-row input:focus {
+            border-color: #37352f;
+        }
+
+        .stock-add-row button {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border: 1px solid #e3e2de;
+            border-radius: 4px;
+            background: #ffffff;
+            color: #37352f;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .stock-add-row button:hover {
+            border-color: #37352f;
+            background: #f0efec;
+        }
+
         /* Empty state */
         .empty-state {
             text-align: center;
@@ -388,6 +494,18 @@
 
             <div class="group-selector" id="groupSelector"></div>
 
+            <div class="stock-editor" id="stockEditor">
+                <div class="stock-editor-header">
+                    <strong>Stocks</strong>
+                    <span id="stockCount"></span>
+                </div>
+                <div class="stock-chips" id="stockChips"></div>
+                <div class="stock-add-row">
+                    <input type="text" id="addStockInput" placeholder="e.g. RELIANCE">
+                    <button id="addStockBtn">Add</button>
+                </div>
+            </div>
+
             <button class="run-btn" id="runBtn" disabled>Run Magic Formula</button>
         </div>
 
@@ -430,6 +548,11 @@
     <script>
         const marketToggle = document.getElementById('marketToggle');
         const groupSelector = document.getElementById('groupSelector');
+        const stockEditor = document.getElementById('stockEditor');
+        const stockChips = document.getElementById('stockChips');
+        const stockCount = document.getElementById('stockCount');
+        const addStockInput = document.getElementById('addStockInput');
+        const addStockBtn = document.getElementById('addStockBtn');
         const runBtn = document.getElementById('runBtn');
         const progressContainer = document.getElementById('progressContainer');
         const progressText = document.getElementById('progressText');
@@ -443,6 +566,7 @@
 
         let selectedMarket = 'IN';
         let selectedGroup = null;
+        let editableSymbols = [];
         let currentSource = null;
         let rankings = [];
         let currentSortKey = 'rank';
@@ -456,6 +580,8 @@
             btn.classList.add('active');
             selectedMarket = btn.dataset.market;
             selectedGroup = null;
+            editableSymbols = [];
+            stockEditor.classList.remove('active');
             loadGroups();
         });
 
@@ -483,22 +609,69 @@
             `).join('');
 
             groupSelector.querySelectorAll('.group-card').forEach(card => {
-                card.addEventListener('click', () => {
+                card.addEventListener('click', async () => {
                     groupSelector.querySelectorAll('.group-card').forEach(c => c.classList.remove('selected'));
                     card.classList.add('selected');
                     selectedGroup = card.dataset.id;
-                    runBtn.disabled = false;
+
+                    // Fetch symbols for this group and populate editor
+                    try {
+                        const res = await fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/symbols?market=${selectedMarket}`);
+                        const data = await res.json();
+                        editableSymbols = [...data.symbols];
+                        renderStockChips();
+                        stockEditor.classList.add('active');
+                        runBtn.disabled = false;
+                    } catch (err) {
+                        stockEditor.classList.remove('active');
+                    }
                 });
             });
         }
 
+        // Stock editor
+        function renderStockChips() {
+            stockChips.innerHTML = editableSymbols.map(s => `
+                <span class="stock-chip">
+                    ${escapeHtml(s)}
+                    <span class="remove-chip" data-symbol="${escapeHtml(s)}">&times;</span>
+                </span>
+            `).join('');
+            stockCount.textContent = `${editableSymbols.length} stocks`;
+            runBtn.disabled = editableSymbols.length === 0;
+
+            stockChips.querySelectorAll('.remove-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    editableSymbols = editableSymbols.filter(s => s !== btn.dataset.symbol);
+                    renderStockChips();
+                });
+            });
+        }
+
+        addStockBtn.addEventListener('click', addStock);
+        addStockInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addStock();
+        });
+
+        function addStock() {
+            const val = addStockInput.value.trim().toUpperCase();
+            if (!val) return;
+            if (editableSymbols.includes(val)) {
+                addStockInput.value = '';
+                return;
+            }
+            editableSymbols.push(val);
+            addStockInput.value = '';
+            renderStockChips();
+        }
+
         // Run analysis
         runBtn.addEventListener('click', () => {
-            if (!selectedGroup) return;
+            if (editableSymbols.length === 0) return;
             startAnalysis();
         });
 
-        function startAnalysis() {
+        async function startAnalysis() {
             if (currentSource) currentSource.close();
 
             // Reset UI
@@ -512,56 +685,62 @@
 
             let skipped = 0;
 
-            const source = new EventSource(
-                `/api/groups/${encodeURIComponent(selectedGroup)}/magic-formula?market=${selectedMarket}`
-            );
-            currentSource = source;
+            // Use fetch + ReadableStream to consume SSE from POST endpoint
+            try {
+                const response = await fetch('/api/magic-formula', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbols: editableSymbols, market: selectedMarket }),
+                });
 
-            source.addEventListener('progress', (e) => {
-                const data = JSON.parse(e.data);
-                const pct = Math.round((data.current / data.total) * 100);
-                progressFill.style.width = `${pct}%`;
-                progressText.textContent = `Analyzing ${data.symbol} (${data.current}/${data.total})`;
-                if (data.status === 'skipped') {
-                    skipped++;
-                    progressSkipped.textContent = `${skipped} stock${skipped > 1 ? 's' : ''} skipped (insufficient data)`;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // Parse SSE lines from buffer
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // keep incomplete line in buffer
+
+                    let currentEvent = null;
+                    for (const line of lines) {
+                        if (line.startsWith('event:')) {
+                            currentEvent = line.slice(6).trim();
+                        } else if (line.startsWith('data:') && currentEvent) {
+                            const dataStr = line.slice(5).trim();
+                            try {
+                                const data = JSON.parse(dataStr);
+                                if (currentEvent === 'progress') {
+                                    const pct = Math.round((data.current / data.total) * 100);
+                                    progressFill.style.width = `${pct}%`;
+                                    progressText.textContent = `Analyzing ${data.symbol} (${data.current}/${data.total})`;
+                                    if (data.status === 'skipped') {
+                                        skipped++;
+                                        progressSkipped.textContent = `${skipped} stock${skipped > 1 ? 's' : ''} skipped (insufficient data)`;
+                                    }
+                                } else if (currentEvent === 'result') {
+                                    rankings = data.rankings;
+                                    renderResults();
+                                } else if (currentEvent === 'error') {
+                                    showError(data.message);
+                                } else if (currentEvent === 'done') {
+                                    // done
+                                }
+                            } catch (_) {}
+                            currentEvent = null;
+                        }
+                    }
                 }
-            });
+            } catch (err) {
+                showError('Analysis failed: ' + err.message);
+            }
 
-            source.addEventListener('result', (e) => {
-                try {
-                    const data = JSON.parse(e.data);
-                    rankings = data.rankings;
-                    renderResults();
-                } catch (err) {
-                    showError('Failed to parse results: ' + err.message);
-                    progressContainer.classList.remove('active');
-                    runBtn.disabled = false;
-                }
-            });
-
-            source.addEventListener('error', (e) => {
-                // Only handle custom SSE error events (have data), not native connection errors
-                if (e.data) {
-                    try {
-                        const data = JSON.parse(e.data);
-                        showError(data.message);
-                    } catch (_) {}
-                    source.close();
-                    progressContainer.classList.remove('active');
-                    runBtn.disabled = false;
-                } else if (source.readyState === EventSource.CLOSED) {
-                    // Connection was closed by server unexpectedly
-                    progressContainer.classList.remove('active');
-                    runBtn.disabled = false;
-                }
-            });
-
-            source.addEventListener('done', () => {
-                progressContainer.classList.remove('active');
-                source.close();
-                runBtn.disabled = false;
-            });
+            progressContainer.classList.remove('active');
+            runBtn.disabled = false;
         }
 
         function renderResults() {
@@ -586,7 +765,7 @@
                 const isTop = s.rank <= 5;
                 return `<tr>
                     <td class="rank-cell ${isTop ? 'rank-top' : ''}">${s.rank}</td>
-                    <td class="symbol-cell"><a href="/?symbol=${encodeURIComponent(s.symbol)}&market=${selectedMarket}" target="_blank">${escapeHtml(s.symbol)}</a></td>
+                    <td class="symbol-cell"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${selectedMarket}" target="_blank">${escapeHtml(s.symbol)}</a></td>
                     <td class="name-cell" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
                     <td class="num-cell ${s.earnings_yield > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.earnings_yield.toFixed(2)}%</td>
                     <td class="num-cell ${s.roic > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.roic.toFixed(2)}%</td>
