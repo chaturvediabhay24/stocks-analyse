@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 860px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 60px 40px;
         }
@@ -189,64 +189,64 @@
         }
 
         .category-title {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #9b9a97;
-            margin-top: 40px;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0efec;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #37352f;
+            margin-top: 44px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e3e2de;
+        }
+
+        /* Two-column sections grid */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         /* Cards */
         .section-card {
             background: #ffffff;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            border: 1px solid #e8e7e4;
+            border-radius: 10px;
             overflow: hidden;
-            animation: fadeSlideIn 0.4s ease-out;
+            animation: fadeSlideIn 0.35s ease-out;
         }
 
         .section-card.summary-card {
-            border: 2px solid #37352f;
-            background: #fbfbfa;
+            grid-column: 1 / -1;
+            border: 1.5px solid #37352f;
         }
 
         @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .section-header {
-            padding: 14px 20px;
-            font-size: 14px;
+            padding: 12px 16px;
+            font-size: 13px;
             font-weight: 600;
             color: #37352f;
-            background: #fbfbfa;
+            background: #fafaf9;
             border-bottom: 1px solid #f0efec;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             user-select: none;
+            transition: background 0.1s;
         }
 
         .section-header:hover {
-            background: #f7f6f3;
+            background: #f3f2f0;
         }
 
         .section-header .chevron {
-            font-size: 10px;
-            color: #9b9a97;
+            font-size: 9px;
+            color: #c4c3bf;
             transition: transform 0.2s;
         }
 
@@ -259,54 +259,77 @@
         }
 
         .section-body {
-            padding: 4px 0;
+            padding: 6px 0;
         }
 
+        /* Metric rows inside cards */
         .metric-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            font-size: 14px;
+            justify-content: space-between;
+            padding: 6px 16px;
+            font-size: 13px;
             transition: background 0.1s;
         }
 
         .metric-row:hover {
-            background: #fbfbfa;
+            background: #fafaf9;
         }
 
         .metric-label {
-            color: #6b6b6b;
-            flex-shrink: 0;
+            color: #9b9a97;
+            font-size: 12.5px;
+            flex-shrink: 1;
+            min-width: 0;
         }
 
         .metric-value {
-            font-weight: 500;
-            text-align: right;
+            font-weight: 600;
             color: #37352f;
+            font-size: 13px;
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 12px;
         }
 
-        /* Signal colors */
-        .signal-bullish {
+        /* Signal pill tags */
+        .signal-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.6;
+            white-space: nowrap;
+        }
+
+        .signal-pill.pill-bullish {
+            background: #dbf3e6;
             color: #0f7b3f;
         }
 
-        .signal-bearish {
+        .signal-pill.pill-bearish {
+            background: #fce4e8;
             color: #c4314b;
         }
 
-        .signal-neutral {
-            color: #9b9a97;
+        .signal-pill.pill-neutral {
+            background: #f0efec;
+            color: #787774;
         }
 
         /* Summary badge */
         .summary-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 5px;
             font-weight: 700;
-            font-size: 15px;
-            letter-spacing: 0.02em;
+            font-size: 13px;
+            white-space: nowrap;
         }
 
         .badge-bullish {
@@ -321,7 +344,7 @@
 
         .badge-neutral {
             background: #f0efec;
-            color: #6b6b6b;
+            color: #787774;
         }
 
         /* Error */
@@ -370,7 +393,7 @@
         /* Responsive */
         @media (max-width: 640px) {
             .container {
-                padding: 32px 20px;
+                padding: 32px 16px;
             }
             .header h1 {
                 font-size: 28px;
@@ -378,6 +401,9 @@
             .search-input {
                 font-size: 16px;
                 padding: 14px 16px;
+            }
+            .sections-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -426,13 +452,13 @@
                 <h2 id="stockName"></h2>
             </div>
             <div id="technicalLabel"></div>
-            <div id="technicalSections"></div>
+            <div class="sections-grid" id="technicalSections"></div>
             <div id="fundamentalLabel"></div>
-            <div id="fundamentalSections"></div>
+            <div class="sections-grid" id="fundamentalSections"></div>
             <div id="piotroskiLabel"></div>
-            <div id="piotroskiSections"></div>
+            <div class="sections-grid" id="piotroskiSections"></div>
             <div id="canslimLabel"></div>
-            <div id="canslimSections"></div>
+            <div class="sections-grid" id="canslimSections"></div>
         </div>
     </div>
 
@@ -639,10 +665,16 @@
             });
         }
 
+        function signalIcon(signal) {
+            if (signal === 'bullish') return '↑';
+            if (signal === 'bearish') return '↓';
+            return '—';
+        }
+
         function createSectionCard(data) {
             const card = document.createElement('div');
             const isSummary = data.is_summary;
-            card.className = `section-card${isSummary ? ' summary-card' : ' collapsed'}`;
+            card.className = `section-card${isSummary ? ' summary-card' : ''}`;
 
             // Header
             const header = document.createElement('div');
@@ -660,17 +692,18 @@
                 const rowEl = document.createElement('div');
                 rowEl.className = 'metric-row';
 
-                const signalClass = row.signal ? `signal-${row.signal}` : '';
-
                 if (isSummary) {
                     rowEl.innerHTML = `
                         <span class="metric-label">${escapeHtml(row.label)}</span>
-                        <span class="summary-badge badge-${row.signal || 'neutral'}">${escapeHtml(row.value)}</span>
+                        <span class="summary-badge badge-${row.signal || 'neutral'}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>
                     `;
                 } else {
+                    const valueHtml = row.signal
+                        ? `<span class="signal-pill pill-${row.signal}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>`
+                        : `<span class="metric-value">${escapeHtml(row.value)}</span>`;
                     rowEl.innerHTML = `
                         <span class="metric-label">${escapeHtml(row.label)}</span>
-                        <span class="metric-value ${signalClass}">${escapeHtml(row.value)}</span>
+                        ${valueHtml}
                     `;
                 }
 
