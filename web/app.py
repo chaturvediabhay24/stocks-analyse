@@ -20,8 +20,8 @@ TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    return (TEMPLATE_DIR / "groups.html").read_text()
+async def landing():
+    return (TEMPLATE_DIR / "landing.html").read_text()
 
 
 @app.get("/analyze", response_class=HTMLResponse)
@@ -117,7 +117,6 @@ async def analyze(symbol: str, market: str = "IN"):
 
 @app.get("/groups", response_class=HTMLResponse)
 async def groups_page():
-    """Keep /groups as an alias."""
     return (TEMPLATE_DIR / "groups.html").read_text()
 
 

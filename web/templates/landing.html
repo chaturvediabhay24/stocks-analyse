@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #37352f;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #37352f;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #9b9a97;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .nav-btn {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 18px;
+            border: 1px solid #e3e2de;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #6b6b6b;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .nav-btn:hover {
+            border-color: #37352f;
+            color: #37352f;
+        }
+
+        .nav-btn.active {
+            background: #37352f;
+            color: #ffffff;
+            border-color: #37352f;
+        }
+
+        /* Tables grid */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .table-panel {
+            min-width: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .panel-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .panel-flag {
+            font-size: 13px;
+            color: #9b9a97;
+            font-weight: 500;
+        }
+
+        /* Progress */
+        .panel-progress {
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .panel-progress.active {
+            display: block;
+        }
+
+        .panel-progress-text {
+            font-size: 13px;
+            color: #9b9a97;
+            margin-bottom: 6px;
+        }
+
+        .panel-progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background: #f0efec;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .panel-progress-bar-fill {
+            height: 100%;
+            background: #37352f;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* Results table */
+        .results-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .results-table th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9b9a97;
+            background: #fbfbfa;
+            border-bottom: 1px solid #e3e2de;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .results-table th:hover {
+            color: #37352f;
+        }
+
+        .results-table th.sort-asc::after {
+            content: ' \2191';
+        }
+
+        .results-table th.sort-desc::after {
+            content: ' \2193';
+        }
+
+        .results-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f0efec;
+            white-space: nowrap;
+        }
+
+        .results-table tbody tr:hover {
+            background: #fbfbfa;
+        }
+
+        .results-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rank-cell {
+            font-weight: 700;
+            color: #37352f;
+            text-align: center;
+            width: 40px;
+        }
+
+        .rank-top {
+            color: #0f7b3f;
+        }
+
+        .symbol-cell {
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .symbol-cell a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dashed #c4c3bf;
+            transition: border-color 0.15s;
+        }
+
+        .symbol-cell a:hover {
+            border-color: #37352f;
+        }
+
+        .name-cell {
+            color: #6b6b6b;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .signal-bullish {
+            color: #0f7b3f;
+        }
+
+        .signal-bearish {
+            color: #c4314b;
+        }
+
+        /* Empty / error */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #9b9a97;
+            font-size: 14px;
+        }
+
+        .error-message {
+            padding: 12px 16px;
+            background: #fce4e8;
+            color: #c4314b;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-table-wrapper.loaded {
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .tables-grid {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+            .container {
+                padding: 32px 20px;
+            }
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stock Analyzer</h1>
+            <p>Magic Formula rankings at a glance</p>
+        </div>
+
+        <div class="nav-bar">
+            <a href="/" class="nav-btn active">Dashboard</a>
+            <a href="/groups" class="nav-btn">Group Analysis</a>
+            <a href="/analyze" class="nav-btn">Individual Analysis</a>
+        </div>
+
+        <div class="tables-grid">
+            <!-- India: Nifty 50 -->
+            <div class="table-panel" id="panelIN">
+                <div class="panel-header">
+                    <h2>Nifty 50</h2>
+                    <span class="panel-flag">India (NSE)</span>
+                </div>
+                <div class="panel-progress active" id="progressIN">
+                    <div class="panel-progress-text" id="progressTextIN">Loading...</div>
+                    <div class="panel-progress-bar-bg">
+                        <div class="panel-progress-bar-fill" id="progressFillIN"></div>
+                    </div>
+                </div>
+                <div class="results-table-wrapper" id="tableWrapperIN">
+                    <table class="results-table" id="tableIN">
+                        <thead>
+                            <tr>
+                                <th data-key="rank" class="sort-asc">Rank</th>
+                                <th data-key="symbol">Symbol</th>
+                                <th data-key="name">Name</th>
+                                <th data-key="earnings_yield">EY %</th>
+                                <th data-key="roic">ROIC %</th>
+                                <th data-key="combined_score">Score</th>
+                                <th data-key="price">Price</th>
+                                <th data-key="pe">PE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyIN"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- US: NASDAQ 100 -->
+            <div class="table-panel" id="panelUS">
+                <div class="panel-header">
+                    <h2>NASDAQ 100</h2>
+                    <span class="panel-flag">US</span>
+                </div>
+                <div class="panel-progress active" id="progressUS">
+                    <div class="panel-progress-text" id="progressTextUS">Loading...</div>
+                    <div class="panel-progress-bar-bg">
+                        <div class="panel-progress-bar-fill" id="progressFillUS"></div>
+                    </div>
+                </div>
+                <div class="results-table-wrapper" id="tableWrapperUS">
+                    <table class="results-table" id="tableUS">
+                        <thead>
+                            <tr>
+                                <th data-key="rank" class="sort-asc">Rank</th>
+                                <th data-key="symbol">Symbol</th>
+                                <th data-key="name">Name</th>
+                                <th data-key="earnings_yield">EY %</th>
+                                <th data-key="roic">ROIC %</th>
+                                <th data-key="combined_score">Score</th>
+                                <th data-key="price">Price</th>
+                                <th data-key="pe">PE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyUS"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Panel config
+        const panels = {
+            IN: {
+                groupId: 'nifty50',
+                market: 'IN',
+                progress: document.getElementById('progressIN'),
+                progressText: document.getElementById('progressTextIN'),
+                progressFill: document.getElementById('progressFillIN'),
+                tableWrapper: document.getElementById('tableWrapperIN'),
+                table: document.getElementById('tableIN'),
+                body: document.getElementById('bodyIN'),
+                rankings: [],
+                sortKey: 'rank',
+                sortDir: 'asc',
+            },
+            US: {
+                groupId: 'nasdaq100',
+                market: 'US',
+                progress: document.getElementById('progressUS'),
+                progressText: document.getElementById('progressTextUS'),
+                progressFill: document.getElementById('progressFillUS'),
+                tableWrapper: document.getElementById('tableWrapperUS'),
+                table: document.getElementById('tableUS'),
+                body: document.getElementById('bodyUS'),
+                rankings: [],
+                sortKey: 'rank',
+                sortDir: 'asc',
+            },
+        };
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function fillTable(panel, data) {
+            panel.body.innerHTML = data.map(s => {
+                const isTop = s.rank <= 5;
+                return `<tr>
+                    <td class="rank-cell ${isTop ? 'rank-top' : ''}">${s.rank}</td>
+                    <td class="symbol-cell"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${panel.market}" target="_blank">${escapeHtml(s.symbol)}</a></td>
+                    <td class="name-cell" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
+                    <td class="num-cell ${s.earnings_yield > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.earnings_yield.toFixed(2)}%</td>
+                    <td class="num-cell ${s.roic > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.roic.toFixed(2)}%</td>
+                    <td class="num-cell" style="font-weight:600">${s.combined_score}</td>
+                    <td class="num-cell">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
+                    <td class="num-cell">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function setupSorting(panel) {
+            panel.table.querySelectorAll('th[data-key]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const key = th.dataset.key;
+                    if (panel.sortKey === key) {
+                        panel.sortDir = panel.sortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        panel.sortKey = key;
+                        panel.sortDir = 'asc';
+                    }
+                    panel.table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                    th.classList.add(panel.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                    const sorted = [...panel.rankings].sort((a, b) => {
+                        let va = a[key], vb = b[key];
+                        if (typeof va === 'string') {
+                            va = va.toLowerCase();
+                            vb = (vb || '').toLowerCase();
+                            return panel.sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                        }
+                        va = va ?? Infinity;
+                        vb = vb ?? Infinity;
+                        return panel.sortDir === 'asc' ? va - vb : vb - va;
+                    });
+                    fillTable(panel, sorted);
+                });
+            });
+        }
+
+        async function loadPanel(panel) {
+            try {
+                const response = await fetch(`/api/groups/${panel.groupId}/magic-formula?market=${panel.market}`);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    let currentEvent = null;
+                    for (const line of lines) {
+                        if (line.startsWith('event:')) {
+                            currentEvent = line.slice(6).trim();
+                        } else if (line.startsWith('data:') && currentEvent) {
+                            const dataStr = line.slice(5).trim();
+                            try {
+                                const data = JSON.parse(dataStr);
+                                if (currentEvent === 'progress') {
+                                    const pct = Math.round((data.current / data.total) * 100);
+                                    panel.progressFill.style.width = `${pct}%`;
+                                    panel.progressText.textContent = `Analyzing ${data.symbol} (${data.current}/${data.total})`;
+                                } else if (currentEvent === 'result') {
+                                    panel.rankings = data.rankings;
+                                    fillTable(panel, panel.rankings);
+                                    panel.tableWrapper.classList.add('loaded');
+                                } else if (currentEvent === 'error') {
+                                    panel.body.innerHTML = `<tr><td colspan="8" class="empty-state">${escapeHtml(data.message)}</td></tr>`;
+                                }
+                            } catch (_) {}
+                            currentEvent = null;
+                        }
+                    }
+                }
+            } catch (err) {
+                panel.body.innerHTML = `<tr><td colspan="8" class="empty-state">Failed to load</td></tr>`;
+            }
+
+            panel.progress.classList.remove('active');
+        }
+
+        // Init: load both panels in parallel
+        setupSorting(panels.IN);
+        setupSorting(panels.US);
+        loadPanel(panels.IN);
+        loadPanel(panels.US);
+    </script>
+</body>
+</html>
