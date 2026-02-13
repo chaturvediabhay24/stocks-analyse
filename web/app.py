@@ -23,18 +23,18 @@ async def index():
 
 
 @app.get("/api/search")
-async def search(q: str = ""):
-    return search_tickers(q)
+async def search(q: str = "", market: str = "IN"):
+    return search_tickers(q, market=market)
 
 
 @app.get("/api/analyze/{symbol}")
-async def analyze(symbol: str):
+async def analyze(symbol: str, market: str = "IN"):
     symbol = symbol.strip().upper()
 
     async def event_stream():
         # Stream technical analysis sections
         try:
-            for section in technical_analysis(symbol):
+            for section in technical_analysis(symbol, market=market):
                 yield {
                     "event": "section",
                     "data": json.dumps({
@@ -51,7 +51,7 @@ async def analyze(symbol: str):
 
         # Stream fundamental analysis sections
         try:
-            for section in fundamental_analysis(symbol):
+            for section in fundamental_analysis(symbol, market=market):
                 yield {
                     "event": "section",
                     "data": json.dumps({
@@ -68,7 +68,7 @@ async def analyze(symbol: str):
 
         # Stream Piotroski F-Score sections
         try:
-            for section in piotroski_fscore(symbol):
+            for section in piotroski_fscore(symbol, market=market):
                 yield {
                     "event": "section",
                     "data": json.dumps({
@@ -85,7 +85,7 @@ async def analyze(symbol: str):
 
         # Stream CAN SLIM analysis sections
         try:
-            for section in canslim_analysis(symbol):
+            for section in canslim_analysis(symbol, market=market):
                 yield {
                     "event": "section",
                     "data": json.dumps({

@@ -8,6 +8,7 @@ where signal is one of: "bullish", "bearish", "neutral", "info", or None.
 
 import ta
 from core.data_fetcher import fetch_stock_data, fetch_stock_info, fetch_stock_financials
+from core.markets import get_market_config
 
 
 def _fmt(value, prefix="", suffix="", decimals=2):
@@ -26,9 +27,11 @@ def _pct(value):
     return f"{value * 100:.2f}%"
 
 
-def technical_analysis(symbol: str):
+def technical_analysis(symbol: str, market: str = "IN"):
     """Yield technical analysis sections one at a time."""
-    df = fetch_stock_data(symbol)
+    config = get_market_config(market)
+    cur = config["currency"]
+    df = fetch_stock_data(symbol, market=market)
     close = df["Close"]
     high = df["High"]
     low = df["Low"]
@@ -48,7 +51,7 @@ def technical_analysis(symbol: str):
     yield {
         "section": "Price",
         "rows": [
-            {"label": "Current Price", "value": f"₹{latest_price:,.2f}", "signal": None},
+            {"label": "Current Price", "value": f"{cur}{latest_price:,.2f}", "signal": None},
             {"label": "Change", "value": f"{change_sign}{price_change:,.2f} ({change_sign}{price_change_pct:.2f}%)",
              "signal": "bullish" if price_change >= 0 else "bearish"},
         ],
@@ -84,14 +87,14 @@ def technical_analysis(symbol: str):
     yield {
         "section": "Moving Averages",
         "rows": [
-            {"label": "SMA 20", "value": f"₹{sma_20:,.2f}",
+            {"label": "SMA 20", "value": f"{cur}{sma_20:,.2f}",
              "signal": "bullish" if latest_price > sma_20 else "bearish"},
-            {"label": "SMA 50", "value": f"₹{sma_50:,.2f}",
+            {"label": "SMA 50", "value": f"{cur}{sma_50:,.2f}",
              "signal": "bullish" if above_50 else "bearish"},
-            {"label": "SMA 200", "value": f"₹{sma_200:,.2f}",
+            {"label": "SMA 200", "value": f"{cur}{sma_200:,.2f}",
              "signal": "bullish" if above_200 else "bearish"},
-            {"label": "EMA 12", "value": f"₹{ema_12:,.2f}", "signal": None},
-            {"label": "EMA 26", "value": f"₹{ema_26:,.2f}", "signal": None},
+            {"label": "EMA 12", "value": f"{cur}{ema_12:,.2f}", "signal": None},
+            {"label": "EMA 26", "value": f"{cur}{ema_26:,.2f}", "signal": None},
             {"label": "Cross Signal", "value": cross_signal, "signal": cross_s},
         ],
     }
@@ -185,10 +188,10 @@ def technical_analysis(symbol: str):
     yield {
         "section": "Volatility",
         "rows": [
-            {"label": "ATR (14)", "value": f"₹{atr:,.2f} ({atr_pct:.2f}%)", "signal": None},
-            {"label": "Bollinger Upper", "value": f"₹{bb_high:,.2f}", "signal": None},
-            {"label": "Bollinger Mid", "value": f"₹{bb_mid:,.2f}", "signal": None},
-            {"label": "Bollinger Lower", "value": f"₹{bb_low:,.2f}", "signal": None},
+            {"label": "ATR (14)", "value": f"{cur}{atr:,.2f} ({atr_pct:.2f}%)", "signal": None},
+            {"label": "Bollinger Upper", "value": f"{cur}{bb_high:,.2f}", "signal": None},
+            {"label": "Bollinger Mid", "value": f"{cur}{bb_mid:,.2f}", "signal": None},
+            {"label": "Bollinger Lower", "value": f"{cur}{bb_low:,.2f}", "signal": None},
             {"label": "BB Width", "value": f"{bb_width:.2f}%", "signal": None},
             {"label": "BB Signal", "value": bb_sig, "signal": bb_s},
         ],
@@ -236,11 +239,11 @@ def technical_analysis(symbol: str):
     yield {
         "section": "Support / Resistance",
         "rows": [
-            {"label": "20-Day Support", "value": f"₹{recent_low:,.2f}", "signal": None},
-            {"label": "20-Day Resistance", "value": f"₹{recent_high:,.2f}", "signal": None},
-            {"label": "Pivot Point", "value": f"₹{pivot:,.2f}", "signal": None},
-            {"label": "R1 / R2", "value": f"₹{r1:,.2f} / ₹{r2:,.2f}", "signal": None},
-            {"label": "S1 / S2", "value": f"₹{s1:,.2f} / ₹{s2:,.2f}", "signal": None},
+            {"label": "20-Day Support", "value": f"{cur}{recent_low:,.2f}", "signal": None},
+            {"label": "20-Day Resistance", "value": f"{cur}{recent_high:,.2f}", "signal": None},
+            {"label": "Pivot Point", "value": f"{cur}{pivot:,.2f}", "signal": None},
+            {"label": "R1 / R2", "value": f"{cur}{r1:,.2f} / {cur}{r2:,.2f}", "signal": None},
+            {"label": "S1 / S2", "value": f"{cur}{s1:,.2f} / {cur}{s2:,.2f}", "signal": None},
         ],
     }
 
@@ -256,10 +259,10 @@ def technical_analysis(symbol: str):
     yield {
         "section": "Fibonacci Levels (52-wk)",
         "rows": [
-            {"label": "23.6%", "value": f"₹{fib_236:,.2f}", "signal": None},
-            {"label": "38.2%", "value": f"₹{fib_382:,.2f}", "signal": None},
-            {"label": "50.0%", "value": f"₹{fib_500:,.2f}", "signal": None},
-            {"label": "61.8%", "value": f"₹{fib_618:,.2f}", "signal": None},
+            {"label": "23.6%", "value": f"{cur}{fib_236:,.2f}", "signal": None},
+            {"label": "38.2%", "value": f"{cur}{fib_382:,.2f}", "signal": None},
+            {"label": "50.0%", "value": f"{cur}{fib_500:,.2f}", "signal": None},
+            {"label": "61.8%", "value": f"{cur}{fib_618:,.2f}", "signal": None},
         ],
     }
 
@@ -284,9 +287,11 @@ def technical_analysis(symbol: str):
     }
 
 
-def fundamental_analysis(symbol: str):
+def fundamental_analysis(symbol: str, market: str = "IN"):
     """Yield fundamental analysis sections one at a time."""
-    info = fetch_stock_info(symbol)
+    config = get_market_config(market)
+    cur = config["currency"]
+    info = fetch_stock_info(symbol, market=market)
 
     def get(key, default=None):
         return info.get(key, default)
@@ -301,7 +306,7 @@ def fundamental_analysis(symbol: str):
         "rows": [
             {"label": "Sector", "value": sector, "signal": None},
             {"label": "Industry", "value": industry, "signal": None},
-            {"label": "Current Price", "value": _fmt(current_price, prefix="₹"), "signal": None},
+            {"label": "Current Price", "value": _fmt(current_price, prefix=cur), "signal": None},
         ],
     }
 
@@ -323,8 +328,8 @@ def fundamental_analysis(symbol: str):
     yield {
         "section": "Valuation",
         "rows": [
-            {"label": "Market Cap", "value": _fmt(market_cap, prefix="₹"), "signal": None},
-            {"label": "Enterprise Value", "value": _fmt(enterprise_value, prefix="₹"), "signal": None},
+            {"label": "Market Cap", "value": _fmt(market_cap, prefix=cur), "signal": None},
+            {"label": "Enterprise Value", "value": _fmt(enterprise_value, prefix=cur), "signal": None},
             {"label": "PE Ratio (TTM)", "value": _fmt(pe_trailing), "signal": pe_s},
             {"label": "PE Ratio (Forward)", "value": _fmt(pe_forward),
              "signal": "bullish" if pe_forward and pe_trailing and pe_forward < pe_trailing else None},
@@ -332,7 +337,7 @@ def fundamental_analysis(symbol: str):
             {"label": "P/S Ratio", "value": _fmt(ps), "signal": None},
             {"label": "EV/EBITDA", "value": _fmt(ev_ebitda), "signal": None},
             {"label": "EV/Revenue", "value": _fmt(ev_revenue), "signal": None},
-            {"label": "Book Value", "value": _fmt(book_value, prefix="₹"), "signal": None},
+            {"label": "Book Value", "value": _fmt(book_value, prefix=cur), "signal": None},
         ],
     }
 
@@ -347,11 +352,11 @@ def fundamental_analysis(symbol: str):
     yield {
         "section": "Earnings & Growth",
         "rows": [
-            {"label": "EPS (TTM)", "value": _fmt(eps, prefix="₹"), "signal": None},
-            {"label": "EPS (Forward)", "value": _fmt(forward_eps, prefix="₹"),
+            {"label": "EPS (TTM)", "value": _fmt(eps, prefix=cur), "signal": None},
+            {"label": "EPS (Forward)", "value": _fmt(forward_eps, prefix=cur),
              "signal": "bullish" if forward_eps and eps and forward_eps > eps else None},
-            {"label": "Revenue", "value": _fmt(revenue, prefix="₹"), "signal": None},
-            {"label": "EBITDA", "value": _fmt(ebitda, prefix="₹"), "signal": None},
+            {"label": "Revenue", "value": _fmt(revenue, prefix=cur), "signal": None},
+            {"label": "EBITDA", "value": _fmt(ebitda, prefix=cur), "signal": None},
             {"label": "Revenue Growth", "value": _pct(revenue_growth),
              "signal": "bullish" if revenue_growth and revenue_growth > 0.05 else (
                  "bearish" if revenue_growth and revenue_growth < 0 else "neutral")},
@@ -391,8 +396,8 @@ def fundamental_analysis(symbol: str):
     yield {
         "section": "Cash Flow",
         "rows": [
-            {"label": "Operating Cash Flow", "value": _fmt(operating_cashflow, prefix="₹"), "signal": None},
-            {"label": "Free Cash Flow", "value": _fmt(free_cashflow, prefix="₹"),
+            {"label": "Operating Cash Flow", "value": _fmt(operating_cashflow, prefix=cur), "signal": None},
+            {"label": "Free Cash Flow", "value": _fmt(free_cashflow, prefix=cur),
              "signal": "bullish" if free_cashflow and free_cashflow > 0 else (
                  "bearish" if free_cashflow and free_cashflow < 0 else None)},
         ],
@@ -411,8 +416,8 @@ def fundamental_analysis(symbol: str):
             {"label": "Debt/Equity", "value": _fmt(debt_to_equity),
              "signal": "bullish" if debt_to_equity is not None and debt_to_equity < 50 else (
                  "bearish" if debt_to_equity is not None and debt_to_equity > 150 else "neutral")},
-            {"label": "Total Debt", "value": _fmt(total_debt, prefix="₹"), "signal": None},
-            {"label": "Total Cash", "value": _fmt(total_cash, prefix="₹"), "signal": None},
+            {"label": "Total Debt", "value": _fmt(total_debt, prefix=cur), "signal": None},
+            {"label": "Total Cash", "value": _fmt(total_cash, prefix=cur), "signal": None},
             {"label": "Current Ratio", "value": _fmt(current_ratio),
              "signal": "bullish" if current_ratio and current_ratio > 1.5 else (
                  "bearish" if current_ratio and current_ratio < 1 else "neutral")},
@@ -436,7 +441,7 @@ def fundamental_analysis(symbol: str):
         "section": "Dividends",
         "rows": [
             {"label": "Dividend Yield", "value": div_yield_str, "signal": None},
-            {"label": "Dividend Rate", "value": _fmt(dividend_rate, prefix="₹"), "signal": None},
+            {"label": "Dividend Rate", "value": _fmt(dividend_rate, prefix=cur), "signal": None},
             {"label": "Payout Ratio", "value": _pct(payout_ratio), "signal": None},
         ],
     }
@@ -456,8 +461,8 @@ def fundamental_analysis(symbol: str):
         "section": "Risk & Range",
         "rows": [
             {"label": "Beta", "value": _fmt(beta), "signal": None},
-            {"label": "52-Week High", "value": _fmt(fifty_two_high, prefix="₹"), "signal": None},
-            {"label": "52-Week Low", "value": _fmt(fifty_two_low, prefix="₹"), "signal": None},
+            {"label": "52-Week High", "value": _fmt(fifty_two_high, prefix=cur), "signal": None},
+            {"label": "52-Week Low", "value": _fmt(fifty_two_low, prefix=cur), "signal": None},
             {"label": "52-Week Position", "value": range_str, "signal": None},
         ],
     }
@@ -521,9 +526,11 @@ def _safe_get_row(df, label):
     return None
 
 
-def piotroski_fscore(symbol: str):
+def piotroski_fscore(symbol: str, market: str = "IN"):
     """Yield Piotroski F-Score analysis sections one at a time."""
-    ticker = fetch_stock_financials(symbol)
+    config = get_market_config(market)
+    cur = config["currency"]
+    ticker = fetch_stock_financials(symbol, market=market)
     info = ticker.info
 
     financials = ticker.financials  # annual income statement
@@ -616,11 +623,11 @@ def piotroski_fscore(symbol: str):
     yield {
         "section": "Profitability (4 pts)",
         "rows": [
-            {"label": "Net Income > 0", "value": _fmt(net_income, prefix="₹"),
+            {"label": "Net Income > 0", "value": _fmt(net_income, prefix=cur),
              "signal": "bullish" if ni_positive else "bearish"},
             {"label": "ROA > 0", "value": f"{roa * 100:.2f}%" if roa is not None else "N/A",
              "signal": "bullish" if roa_positive else "bearish"},
-            {"label": "Operating CF > 0", "value": _fmt(ocf, prefix="₹"),
+            {"label": "Operating CF > 0", "value": _fmt(ocf, prefix=cur),
              "signal": "bullish" if ocf_positive else "bearish"},
             {"label": "CF > Net Income (Quality)", "value": "Yes" if quality else "No",
              "signal": "bullish" if quality else "bearish"},
@@ -759,11 +766,13 @@ def piotroski_fscore(symbol: str):
     }
 
 
-def canslim_analysis(symbol: str):
+def canslim_analysis(symbol: str, market: str = "IN"):
     """Yield CAN SLIM analysis sections one at a time."""
-    ticker = fetch_stock_financials(symbol)
+    config = get_market_config(market)
+    cur = config["currency"]
+    ticker = fetch_stock_financials(symbol, market=market)
     info = ticker.info
-    df = fetch_stock_data(symbol)
+    df = fetch_stock_data(symbol, market=market)
 
     close = df["Close"]
     high = df["High"]
@@ -858,8 +867,8 @@ def canslim_analysis(symbol: str):
     yield {
         "section": "N — New Highs",
         "rows": [
-            {"label": "52-Week High", "value": f"₹{week52_high:,.2f}", "signal": None},
-            {"label": "Current Price", "value": f"₹{latest_price:,.2f}", "signal": None},
+            {"label": "52-Week High", "value": f"{cur}{week52_high:,.2f}", "signal": None},
+            {"label": "Current Price", "value": f"{cur}{latest_price:,.2f}", "signal": None},
             {"label": "Distance from High", "value": f"{pct_from_high:.1f}%",
              "signal": "bullish" if n_score else "bearish"},
             {"label": "N Score", "value": "PASS" if n_score else "FAIL",
@@ -921,19 +930,21 @@ def canslim_analysis(symbol: str):
     }
 
     # --- M: Market Direction ---
-    # Use Nifty 50 (^NSEI) as market proxy
+    # Use market index as proxy (Nifty 50 for IN, S&P 500 for US)
     import yfinance as yf
+    index_symbol = config["index"]
+    index_label = "Nifty 50" if market.upper() == "IN" else "S&P 500"
     try:
-        nifty = yf.Ticker("^NSEI")
-        nifty_df = nifty.history(period="6mo")
-        if not nifty_df.empty:
-            nifty_close = nifty_df["Close"]
-            nifty_sma50 = nifty_close.rolling(window=50).mean().iloc[-1]
-            nifty_latest = nifty_close.iloc[-1]
-            m_score = nifty_latest > nifty_sma50
+        index_ticker = yf.Ticker(index_symbol)
+        index_df = index_ticker.history(period="6mo")
+        if not index_df.empty:
+            index_close = index_df["Close"]
+            index_sma50 = index_close.rolling(window=50).mean().iloc[-1]
+            index_latest = index_close.iloc[-1]
+            m_score = index_latest > index_sma50
             m_rows = [
-                {"label": "Nifty 50", "value": f"{nifty_latest:,.2f}", "signal": None},
-                {"label": "Nifty 50 SMA(50)", "value": f"{nifty_sma50:,.2f}", "signal": None},
+                {"label": index_label, "value": f"{index_latest:,.2f}", "signal": None},
+                {"label": f"{index_label} SMA(50)", "value": f"{index_sma50:,.2f}", "signal": None},
                 {"label": "Market Trend", "value": "Uptrend" if m_score else "Downtrend",
                  "signal": "bullish" if m_score else "bearish"},
             ]

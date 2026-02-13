@@ -1,4 +1,4 @@
-"""NSE stock ticker directory for autocomplete suggestions."""
+"""Stock ticker directory for autocomplete suggestions."""
 
 # Top ~200 NSE stocks by market cap / popularity
 # Format: (SYMBOL, COMPANY_NAME)
@@ -204,28 +204,139 @@ NSE_TICKERS = [
     ("AMARAJABAT", "Amara Raja Energy"),
 ]
 
+# Top ~100 US stocks by market cap / popularity
+US_TICKERS = [
+    ("AAPL", "Apple"),
+    ("MSFT", "Microsoft"),
+    ("GOOGL", "Alphabet (Google)"),
+    ("AMZN", "Amazon"),
+    ("NVDA", "NVIDIA"),
+    ("META", "Meta Platforms"),
+    ("TSLA", "Tesla"),
+    ("BRK-B", "Berkshire Hathaway"),
+    ("UNH", "UnitedHealth Group"),
+    ("JNJ", "Johnson & Johnson"),
+    ("V", "Visa"),
+    ("XOM", "Exxon Mobil"),
+    ("JPM", "JPMorgan Chase"),
+    ("WMT", "Walmart"),
+    ("MA", "Mastercard"),
+    ("PG", "Procter & Gamble"),
+    ("LLY", "Eli Lilly"),
+    ("HD", "Home Depot"),
+    ("CVX", "Chevron"),
+    ("MRK", "Merck"),
+    ("ABBV", "AbbVie"),
+    ("PEP", "PepsiCo"),
+    ("KO", "Coca-Cola"),
+    ("AVGO", "Broadcom"),
+    ("COST", "Costco"),
+    ("TMO", "Thermo Fisher Scientific"),
+    ("MCD", "McDonald's"),
+    ("CSCO", "Cisco Systems"),
+    ("ACN", "Accenture"),
+    ("ABT", "Abbott Laboratories"),
+    ("DHR", "Danaher"),
+    ("NEE", "NextEra Energy"),
+    ("LIN", "Linde"),
+    ("CMCSA", "Comcast"),
+    ("ADBE", "Adobe"),
+    ("TXN", "Texas Instruments"),
+    ("NKE", "Nike"),
+    ("BMY", "Bristol-Myers Squibb"),
+    ("ORCL", "Oracle"),
+    ("CRM", "Salesforce"),
+    ("AMD", "Advanced Micro Devices"),
+    ("INTC", "Intel"),
+    ("QCOM", "Qualcomm"),
+    ("PM", "Philip Morris"),
+    ("UPS", "United Parcel Service"),
+    ("HON", "Honeywell"),
+    ("LOW", "Lowe's"),
+    ("NFLX", "Netflix"),
+    ("INTU", "Intuit"),
+    ("UNP", "Union Pacific"),
+    ("CAT", "Caterpillar"),
+    ("SPGI", "S&P Global"),
+    ("BA", "Boeing"),
+    ("RTX", "RTX (Raytheon)"),
+    ("GE", "GE Aerospace"),
+    ("AMGN", "Amgen"),
+    ("DE", "Deere & Company"),
+    ("GS", "Goldman Sachs"),
+    ("BLK", "BlackRock"),
+    ("ISRG", "Intuitive Surgical"),
+    ("GILD", "Gilead Sciences"),
+    ("SYK", "Stryker"),
+    ("ADP", "Automatic Data Processing"),
+    ("MDLZ", "Mondelez"),
+    ("BKNG", "Booking Holdings"),
+    ("VRTX", "Vertex Pharmaceuticals"),
+    ("MMC", "Marsh McLennan"),
+    ("ADI", "Analog Devices"),
+    ("REGN", "Regeneron"),
+    ("SCHW", "Charles Schwab"),
+    ("CB", "Chubb"),
+    ("LRCX", "Lam Research"),
+    ("KLAC", "KLA Corporation"),
+    ("PANW", "Palo Alto Networks"),
+    ("NOW", "ServiceNow"),
+    ("SNPS", "Synopsys"),
+    ("CDNS", "Cadence Design"),
+    ("ABNB", "Airbnb"),
+    ("UBER", "Uber"),
+    ("DASH", "DoorDash"),
+    ("CRWD", "CrowdStrike"),
+    ("SNOW", "Snowflake"),
+    ("DDOG", "Datadog"),
+    ("ZS", "Zscaler"),
+    ("NET", "Cloudflare"),
+    ("COIN", "Coinbase"),
+    ("PLTR", "Palantir"),
+    ("RIVN", "Rivian"),
+    ("LCID", "Lucid Motors"),
+    ("SOFI", "SoFi Technologies"),
+    ("DIS", "Walt Disney"),
+    ("PYPL", "PayPal"),
+    ("SQ", "Block (Square)"),
+    ("SHOP", "Shopify"),
+    ("SPOT", "Spotify"),
+    ("ROKU", "Roku"),
+    ("RBLX", "Roblox"),
+    ("U", "Unity Software"),
+    ("ARM", "Arm Holdings"),
+    ("SMCI", "Super Micro Computer"),
+    ("MU", "Micron Technology"),
+]
 
-def _search_local(query: str, limit: int) -> list[dict]:
+_TICKER_LISTS = {
+    "IN": NSE_TICKERS,
+    "US": US_TICKERS,
+}
+
+
+def _search_local(query: str, limit: int, market: str = "IN") -> list[dict]:
     """Search the local ticker list."""
+    tickers = _TICKER_LISTS.get(market.upper(), NSE_TICKERS)
     query_upper = query.upper().strip()
     results = []
 
     # Exact symbol prefix matches first
-    for symbol, name in NSE_TICKERS:
+    for symbol, name in tickers:
         if symbol.startswith(query_upper):
             results.append({"symbol": symbol, "name": name})
 
     # Then name matches
     query_lower = query.lower()
-    for symbol, name in NSE_TICKERS:
+    for symbol, name in tickers:
         if query_lower in name.lower() and {"symbol": symbol, "name": name} not in results:
             results.append({"symbol": symbol, "name": name})
 
     return results[:limit]
 
 
-def _search_yahoo(query: str, limit: int) -> list[dict]:
-    """Fallback: search Yahoo Finance for NSE/BSE tickers."""
+def _search_yahoo(query: str, limit: int, market: str = "IN") -> list[dict]:
+    """Fallback: search Yahoo Finance for tickers."""
     import requests
 
     try:
@@ -237,22 +348,33 @@ def _search_yahoo(query: str, limit: int) -> list[dict]:
 
         results = []
         for q in r.json().get("quotes", []):
-            # Only include NSE (.NS) and BSE (.BO) stocks
             sym = q.get("symbol", "")
-            if sym.endswith(".NS") or sym.endswith(".BO"):
-                clean_symbol = sym.rsplit(".", 1)[0]
-                name = q.get("longname") or q.get("shortname") or clean_symbol
-                exchange = "NSE" if sym.endswith(".NS") else "BSE"
-                results.append({
-                    "symbol": clean_symbol,
-                    "name": f"{name} ({exchange})",
-                })
+            name = q.get("longname") or q.get("shortname") or sym
+
+            if market.upper() == "IN":
+                # Only include NSE (.NS) and BSE (.BO) stocks
+                if sym.endswith(".NS") or sym.endswith(".BO"):
+                    clean_symbol = sym.rsplit(".", 1)[0]
+                    exchange = "NSE" if sym.endswith(".NS") else "BSE"
+                    results.append({
+                        "symbol": clean_symbol,
+                        "name": f"{name} ({exchange})",
+                    })
+            else:
+                # For US market, include symbols without exchange suffix
+                # or common US exchanges
+                if not sym.endswith((".NS", ".BO", ".L", ".HK", ".SS", ".SZ")):
+                    clean_symbol = sym.split(".")[0] if "." in sym else sym
+                    results.append({
+                        "symbol": clean_symbol,
+                        "name": name,
+                    })
         return results[:limit]
     except Exception:
         return []
 
 
-def search_tickers(query: str, limit: int = 8) -> list[dict]:
+def search_tickers(query: str, limit: int = 8, market: str = "IN") -> list[dict]:
     """Search tickers — local list first, Yahoo Finance fallback.
 
     Returns list of {"symbol": ..., "name": ...} dicts.
@@ -262,13 +384,13 @@ def search_tickers(query: str, limit: int = 8) -> list[dict]:
         return []
 
     # Try local list first
-    local_results = _search_local(query, limit)
+    local_results = _search_local(query, limit, market)
 
     if len(local_results) >= 3:
         return local_results
 
     # Supplement with Yahoo Finance search
-    yahoo_results = _search_yahoo(query, limit)
+    yahoo_results = _search_yahoo(query, limit, market)
     seen = {r["symbol"] for r in local_results}
     for yr in yahoo_results:
         if yr["symbol"] not in seen:

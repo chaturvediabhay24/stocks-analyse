@@ -335,6 +335,38 @@
             animation: fadeSlideIn 0.3s ease-out;
         }
 
+        /* Market toggle */
+        .market-toggle {
+            display: inline-flex;
+            background: #f0efec;
+            border-radius: 6px;
+            padding: 2px;
+            margin-bottom: 12px;
+        }
+
+        .market-toggle button {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: #9b9a97;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .market-toggle button.active {
+            background: #ffffff;
+            color: #37352f;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .market-toggle button:hover:not(.active) {
+            color: #6b6b6b;
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .container {
@@ -354,7 +386,14 @@
     <div class="container">
         <div class="header">
             <h1>Stock Analyzer</h1>
-            <p>Technical & fundamental analysis for NSE-listed Indian stocks</p>
+            <p>Technical & fundamental analysis</p>
+        </div>
+
+        <div class="search-container">
+            <div class="market-toggle" id="marketToggle">
+                <button class="active" data-market="IN">India</button>
+                <button data-market="US">US</button>
+            </div>
         </div>
 
         <div class="search-container">
@@ -403,11 +442,31 @@
         const canslimLabel = document.getElementById('canslimLabel');
         const canslimSections = document.getElementById('canslimSections');
         const autocompleteList = document.getElementById('autocompleteList');
+        const marketToggle = document.getElementById('marketToggle');
 
         let currentSource = null;
         let searchTimeout = null;
         let activeIndex = -1;
         let suggestions = [];
+        let selectedMarket = 'IN';
+
+        const placeholders = {
+            IN: 'Enter stock symbol (e.g. RELIANCE, TCS, INFY)',
+            US: 'Enter stock symbol (e.g. AAPL, MSFT, GOOGL)',
+        };
+
+        // Market toggle handler
+        marketToggle.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-market]');
+            if (!btn || btn.classList.contains('active')) return;
+            marketToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedMarket = btn.dataset.market;
+            input.placeholder = placeholders[selectedMarket] || placeholders.IN;
+            input.value = '';
+            hideAutocomplete();
+            input.focus();
+        });
 
         // Autocomplete: fetch suggestions as user types
         input.addEventListener('input', () => {
@@ -421,7 +480,7 @@
 
             searchTimeout = setTimeout(async () => {
                 try {
-                    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&market=${selectedMarket}`);
                     suggestions = await res.json();
                     activeIndex = -1;
                     renderAutocomplete(suggestions);
@@ -525,7 +584,7 @@
             let piotroskiStarted = false;
             let canslimStarted = false;
 
-            const source = new EventSource(`/api/analyze/${encodeURIComponent(symbol)}`);
+            const source = new EventSource(`/api/analyze/${encodeURIComponent(symbol)}?market=${selectedMarket}`);
             currentSource = source;
 
             const categoryConfig = {

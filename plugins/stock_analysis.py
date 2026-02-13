@@ -48,12 +48,12 @@ class StockAnalysisPlugin(BasePlugin):
 
     @property
     def description(self) -> str:
-        return "Technical & fundamental analysis for NSE stocks. Use /analyze"
+        return "Technical & fundamental analysis for Indian & US stocks. Use /analyze"
 
     async def _start_analyze(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "Send me a stock symbol to analyze\\.\n"
-            "Examples: `RELIANCE`, `TCS`, `INFY`, `HDFCBANK`",
+            "Examples: `RELIANCE`, `TCS`, `AAPL`, `MSFT`",
             parse_mode="MarkdownV2",
         )
         return AWAITING_SYMBOL
