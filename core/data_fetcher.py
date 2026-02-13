@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 
 from core.markets import get_market_config
+from core import cache
 
 
 def fetch_stock_data(symbol: str, period: str = "1y", market: str = "IN") -> pd.DataFrame:
@@ -18,6 +19,10 @@ def fetch_stock_data(symbol: str, period: str = "1y", market: str = "IN") -> pd.
     Raises:
         ValueError: If no data is found for the symbol.
     """
+    cached = cache.get("stock_data", symbol, market, period=period)
+    if cached is not None:
+        return cached
+
     config = get_market_config(market)
     suffix = config["suffix"]
     ticker_symbol = f"{symbol}{suffix}"
@@ -25,6 +30,8 @@ def fetch_stock_data(symbol: str, period: str = "1y", market: str = "IN") -> pd.
     df = ticker.history(period=period)
     if df.empty:
         raise ValueError(f"No data found for {ticker_symbol}. Check the ticker symbol.")
+
+    cache.set("stock_data", symbol, market, df, period=period)
     return df
 
 
@@ -41,6 +48,10 @@ def fetch_stock_financials(symbol: str, market: str = "IN"):
     Raises:
         ValueError: If no data is found for the symbol.
     """
+    cached = cache.get("stock_financials", symbol, market)
+    if cached is not None:
+        return cached
+
     config = get_market_config(market)
     suffix = config["suffix"]
     ticker_symbol = f"{symbol}{suffix}"
@@ -48,6 +59,8 @@ def fetch_stock_financials(symbol: str, market: str = "IN"):
     info = ticker.info
     if not info or info.get("regularMarketPrice") is None:
         raise ValueError(f"No data found for {ticker_symbol}. Check the ticker symbol.")
+
+    cache.set("stock_financials", symbol, market, ticker)
     return ticker
 
 
@@ -64,6 +77,10 @@ def fetch_stock_info(symbol: str, market: str = "IN") -> dict:
     Raises:
         ValueError: If info cannot be retrieved.
     """
+    cached = cache.get("stock_info", symbol, market)
+    if cached is not None:
+        return cached
+
     config = get_market_config(market)
     suffix = config["suffix"]
     ticker_symbol = f"{symbol}{suffix}"
@@ -71,4 +88,6 @@ def fetch_stock_info(symbol: str, market: str = "IN") -> dict:
     info = ticker.info
     if not info or info.get("regularMarketPrice") is None:
         raise ValueError(f"No info found for {ticker_symbol}. Check the ticker symbol.")
+
+    cache.set("stock_info", symbol, market, info)
     return info
