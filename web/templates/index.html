@@ -575,7 +575,7 @@
         function createSectionCard(data) {
             const card = document.createElement('div');
             const isSummary = data.is_summary;
-            card.className = `section-card${isSummary ? ' summary-card' : ''}`;
+            card.className = `section-card${isSummary ? ' summary-card' : ' collapsed'}`;
 
             // Header
             const header = document.createElement('div');
