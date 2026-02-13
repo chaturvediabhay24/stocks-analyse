@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.analysis import technical_analysis, fundamental_analysis, piotroski_fscore, canslim_analysis
 from core.tickers import search_tickers
+from core.stock_groups import get_groups, get_group
+from core.group_analysis import magic_formula
 
 app = FastAPI(title="Stock Analyzer")
 
@@ -19,6 +21,11 @@ TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
+    return (TEMPLATE_DIR / "groups.html").read_text()
+
+
+@app.get("/analyze", response_class=HTMLResponse)
+async def analyze_page():
     return (TEMPLATE_DIR / "index.html").read_text()
 
 
@@ -94,6 +101,51 @@ async def analyze(symbol: str, market: str = "IN"):
                     }),
                 }
         except ValueError as e:
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": str(e)}),
+            }
+            return
+
+        yield {
+            "event": "done",
+            "data": json.dumps({"status": "complete"}),
+        }
+
+    return EventSourceResponse(event_stream())
+
+
+@app.get("/groups", response_class=HTMLResponse)
+async def groups_page():
+    """Keep /groups as an alias."""
+    return (TEMPLATE_DIR / "groups.html").read_text()
+
+
+@app.get("/api/groups")
+async def list_groups(market: str = "IN"):
+    return get_groups(market)
+
+
+@app.get("/api/groups/{group_id}/magic-formula")
+async def group_magic_formula(group_id: str, market: str = "IN"):
+    group = get_group(market, group_id)
+    if not group:
+        return {"error": f"Group '{group_id}' not found for market '{market}'"}
+
+    async def event_stream():
+        try:
+            for event in magic_formula(group["symbols"], market=market):
+                if event["type"] == "progress":
+                    yield {
+                        "event": "progress",
+                        "data": json.dumps(event),
+                    }
+                elif event["type"] == "result":
+                    yield {
+                        "event": "result",
+                        "data": json.dumps(event),
+                    }
+        except Exception as e:
             yield {
                 "event": "error",
                 "data": json.dumps({"message": str(e)}),

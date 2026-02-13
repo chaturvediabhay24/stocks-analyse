@@ -385,8 +385,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Stock Analyzer</h1>
-            <p>Technical & fundamental analysis</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <h1>Stock Analyzer</h1>
+                    <p>Technical & fundamental analysis</p>
+                </div>
+                <a href="/" style="font-size:13px;color:#9b9a97;text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='#37352f'" onmouseout="this.style.color='#9b9a97'">Group Analysis →</a>
+            </div>
         </div>
 
         <div class="search-container">
@@ -685,6 +690,19 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Deep link: /?symbol=X&market=Y
+        const params = new URLSearchParams(window.location.search);
+        const deepSymbol = params.get('symbol');
+        const deepMarket = params.get('market');
+        if (deepMarket && deepMarket !== selectedMarket) {
+            const btn = marketToggle.querySelector(`button[data-market="${deepMarket.toUpperCase()}"]`);
+            if (btn) btn.click();
+        }
+        if (deepSymbol) {
+            input.value = deepSymbol.toUpperCase();
+            startAnalysis(deepSymbol.toUpperCase());
         }
 
         // Auto-focus

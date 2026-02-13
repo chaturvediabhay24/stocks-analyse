@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Analysis — Stock Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #37352f;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #37352f;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #9b9a97;
+        }
+
+        .nav-link {
+            font-size: 13px;
+            color: #9b9a97;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .nav-link:hover {
+            color: #37352f;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Market toggle */
+        .market-toggle {
+            display: inline-flex;
+            background: #f0efec;
+            border-radius: 6px;
+            padding: 2px;
+            margin-bottom: 12px;
+        }
+
+        .market-toggle button {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: #9b9a97;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .market-toggle button.active {
+            background: #ffffff;
+            color: #37352f;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .market-toggle button:hover:not(.active) {
+            color: #6b6b6b;
+        }
+
+        /* Controls */
+        .controls {
+            margin-bottom: 32px;
+        }
+
+        /* Group cards */
+        .group-selector {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .group-card {
+            padding: 14px 24px;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: #ffffff;
+        }
+
+        .group-card:hover {
+            border-color: #37352f;
+        }
+
+        .group-card.selected {
+            border-color: #37352f;
+            background: #fbfbfa;
+            box-shadow: 0 0 0 1px #37352f;
+        }
+
+        .group-card-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #37352f;
+        }
+
+        .group-card-count {
+            font-size: 12px;
+            color: #9b9a97;
+            margin-top: 2px;
+        }
+
+        .run-btn {
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 28px;
+            border: none;
+            border-radius: 6px;
+            background: #37352f;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .run-btn:hover:not(:disabled) {
+            background: #1a1a1a;
+        }
+
+        .run-btn:disabled {
+            background: #c4c3bf;
+            cursor: not-allowed;
+        }
+
+        /* Progress */
+        .progress-container {
+            display: none;
+            margin-bottom: 32px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #6b6b6b;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #f0efec;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #37352f;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-skipped {
+            font-size: 12px;
+            color: #9b9a97;
+            margin-top: 6px;
+        }
+
+        /* Results table */
+        .results-container {
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .results-count {
+            font-size: 13px;
+            color: #9b9a97;
+        }
+
+        .results-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e3e2de;
+            border-radius: 8px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .results-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9b9a97;
+            background: #fbfbfa;
+            border-bottom: 1px solid #e3e2de;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .results-table th:hover {
+            color: #37352f;
+        }
+
+        .results-table th.sort-asc::after {
+            content: ' ↑';
+        }
+
+        .results-table th.sort-desc::after {
+            content: ' ↓';
+        }
+
+        .results-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f0efec;
+            white-space: nowrap;
+        }
+
+        .results-table tbody tr:hover {
+            background: #fbfbfa;
+        }
+
+        .results-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rank-cell {
+            font-weight: 700;
+            color: #37352f;
+            text-align: center;
+            width: 50px;
+        }
+
+        .rank-top {
+            color: #0f7b3f;
+        }
+
+        .symbol-cell {
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .symbol-cell a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dashed #c4c3bf;
+            transition: border-color 0.15s;
+        }
+
+        .symbol-cell a:hover {
+            border-color: #37352f;
+        }
+
+        .name-cell {
+            color: #6b6b6b;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .signal-bullish {
+            color: #0f7b3f;
+        }
+
+        .signal-bearish {
+            color: #c4314b;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #9b9a97;
+            font-size: 15px;
+        }
+
+        /* Error */
+        .error-message {
+            padding: 16px 20px;
+            background: #fce4e8;
+            color: #c4314b;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            animation: fadeSlideIn 0.3s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 32px 20px;
+            }
+            .header h1 {
+                font-size: 28px;
+            }
+            .group-selector {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-row">
+                <div>
+                    <h1>Group Analysis</h1>
+                    <p>Magic Formula ranking across stock indices</p>
+                </div>
+                <a href="/analyze" class="nav-link">← Individual Analysis</a>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="market-toggle" id="marketToggle">
+                <button class="active" data-market="IN">India</button>
+                <button data-market="US">US</button>
+            </div>
+
+            <div class="group-selector" id="groupSelector"></div>
+
+            <button class="run-btn" id="runBtn" disabled>Run Magic Formula</button>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-text" id="progressText">Analyzing stocks...</div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-skipped" id="progressSkipped"></div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="results-header">
+                <h2 id="resultsTitle">Rankings</h2>
+                <span class="results-count" id="resultsCount"></span>
+            </div>
+            <div class="results-table-wrapper">
+                <table class="results-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th data-key="rank" class="sort-asc">Rank</th>
+                            <th data-key="symbol">Symbol</th>
+                            <th data-key="name">Name</th>
+                            <th data-key="earnings_yield">EY %</th>
+                            <th data-key="roic">ROIC %</th>
+                            <th data-key="ey_rank">EY Rank</th>
+                            <th data-key="roic_rank">ROIC Rank</th>
+                            <th data-key="combined_score">Score</th>
+                            <th data-key="price">Price</th>
+                            <th data-key="pe">PE</th>
+                            <th data-key="market_cap">Mkt Cap</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const marketToggle = document.getElementById('marketToggle');
+        const groupSelector = document.getElementById('groupSelector');
+        const runBtn = document.getElementById('runBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressText = document.getElementById('progressText');
+        const progressFill = document.getElementById('progressFill');
+        const progressSkipped = document.getElementById('progressSkipped');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsBody = document.getElementById('resultsBody');
+        const resultsTable = document.getElementById('resultsTable');
+
+        let selectedMarket = 'IN';
+        let selectedGroup = null;
+        let currentSource = null;
+        let rankings = [];
+        let currentSortKey = 'rank';
+        let currentSortDir = 'asc';
+
+        // Market toggle
+        marketToggle.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-market]');
+            if (!btn || btn.classList.contains('active')) return;
+            marketToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedMarket = btn.dataset.market;
+            selectedGroup = null;
+            loadGroups();
+        });
+
+        // Load groups for selected market
+        async function loadGroups() {
+            runBtn.disabled = true;
+            resultsContainer.classList.remove('active');
+            progressContainer.classList.remove('active');
+
+            try {
+                const res = await fetch(`/api/groups?market=${selectedMarket}`);
+                const groups = await res.json();
+                renderGroups(groups);
+            } catch (err) {
+                groupSelector.innerHTML = '<div class="empty-state">Failed to load groups</div>';
+            }
+        }
+
+        function renderGroups(groups) {
+            groupSelector.innerHTML = groups.map(g => `
+                <div class="group-card" data-id="${escapeHtml(g.id)}">
+                    <div class="group-card-name">${escapeHtml(g.name)}</div>
+                    <div class="group-card-count">${g.count} stocks</div>
+                </div>
+            `).join('');
+
+            groupSelector.querySelectorAll('.group-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    groupSelector.querySelectorAll('.group-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedGroup = card.dataset.id;
+                    runBtn.disabled = false;
+                });
+            });
+        }
+
+        // Run analysis
+        runBtn.addEventListener('click', () => {
+            if (!selectedGroup) return;
+            startAnalysis();
+        });
+
+        function startAnalysis() {
+            if (currentSource) currentSource.close();
+
+            // Reset UI
+            resultsContainer.classList.remove('active');
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Starting analysis...';
+            progressSkipped.textContent = '';
+            resultsBody.innerHTML = '';
+            runBtn.disabled = true;
+
+            let skipped = 0;
+
+            const source = new EventSource(
+                `/api/groups/${encodeURIComponent(selectedGroup)}/magic-formula?market=${selectedMarket}`
+            );
+            currentSource = source;
+
+            source.addEventListener('progress', (e) => {
+                const data = JSON.parse(e.data);
+                const pct = Math.round((data.current / data.total) * 100);
+                progressFill.style.width = `${pct}%`;
+                progressText.textContent = `Analyzing ${data.symbol} (${data.current}/${data.total})`;
+                if (data.status === 'skipped') {
+                    skipped++;
+                    progressSkipped.textContent = `${skipped} stock${skipped > 1 ? 's' : ''} skipped (insufficient data)`;
+                }
+            });
+
+            source.addEventListener('result', (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    rankings = data.rankings;
+                    renderResults();
+                } catch (err) {
+                    showError('Failed to parse results: ' + err.message);
+                    progressContainer.classList.remove('active');
+                    runBtn.disabled = false;
+                }
+            });
+
+            source.addEventListener('error', (e) => {
+                // Only handle custom SSE error events (have data), not native connection errors
+                if (e.data) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        showError(data.message);
+                    } catch (_) {}
+                    source.close();
+                    progressContainer.classList.remove('active');
+                    runBtn.disabled = false;
+                } else if (source.readyState === EventSource.CLOSED) {
+                    // Connection was closed by server unexpectedly
+                    progressContainer.classList.remove('active');
+                    runBtn.disabled = false;
+                }
+            });
+
+            source.addEventListener('done', () => {
+                progressContainer.classList.remove('active');
+                source.close();
+                runBtn.disabled = false;
+            });
+        }
+
+        function renderResults() {
+            if (rankings.length === 0) {
+                resultsContainer.classList.add('active');
+                resultsBody.innerHTML = '<tr><td colspan="11" class="empty-state">No stocks with sufficient data</td></tr>';
+                return;
+            }
+
+            // Find selected group name
+            const selectedCard = groupSelector.querySelector('.group-card.selected .group-card-name');
+            const groupName = selectedCard ? selectedCard.textContent : 'Group';
+            resultsTitle.textContent = `${groupName} — Magic Formula`;
+            resultsCount.textContent = `${rankings.length} stocks ranked`;
+
+            fillTable(rankings);
+            resultsContainer.classList.add('active');
+        }
+
+        function fillTable(data) {
+            resultsBody.innerHTML = data.map((s, i) => {
+                const isTop = s.rank <= 5;
+                return `<tr>
+                    <td class="rank-cell ${isTop ? 'rank-top' : ''}">${s.rank}</td>
+                    <td class="symbol-cell"><a href="/?symbol=${encodeURIComponent(s.symbol)}&market=${selectedMarket}" target="_blank">${escapeHtml(s.symbol)}</a></td>
+                    <td class="name-cell" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
+                    <td class="num-cell ${s.earnings_yield > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.earnings_yield.toFixed(2)}%</td>
+                    <td class="num-cell ${s.roic > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.roic.toFixed(2)}%</td>
+                    <td class="num-cell">${s.ey_rank}</td>
+                    <td class="num-cell">${s.roic_rank}</td>
+                    <td class="num-cell" style="font-weight:600">${s.combined_score}</td>
+                    <td class="num-cell">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
+                    <td class="num-cell">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
+                    <td class="num-cell">${escapeHtml(s.market_cap)}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Sortable columns
+        resultsTable.querySelectorAll('th[data-key]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.dataset.key;
+                if (currentSortKey === key) {
+                    currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortKey = key;
+                    currentSortDir = 'asc';
+                }
+
+                // Update header classes
+                resultsTable.querySelectorAll('th').forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                th.classList.add(currentSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                // Sort
+                const sorted = [...rankings].sort((a, b) => {
+                    let va = a[key], vb = b[key];
+                    if (typeof va === 'string') {
+                        va = va.toLowerCase();
+                        vb = (vb || '').toLowerCase();
+                        return currentSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    }
+                    va = va ?? Infinity;
+                    vb = vb ?? Infinity;
+                    return currentSortDir === 'asc' ? va - vb : vb - va;
+                });
+                fillTable(sorted);
+            });
+        });
+
+        function showError(message) {
+            const el = document.createElement('div');
+            el.className = 'error-message';
+            el.textContent = message;
+            progressContainer.insertAdjacentElement('afterend', el);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Init
+        loadGroups();
+    </script>
+</body>
+</html>
