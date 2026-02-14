@@ -4,186 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    ink: '#37352f',
+                    muted: '#9b9a97',
+                    subtle: '#6b6b6b',
+                    lite: '#c4c3bf',
+                    edge: '#e3e2de',
+                    surface: '#fbfbfa',
+                    tint: '#f7f6f3',
+                    wash: '#f0efec',
+                    bull: '#0f7b3f',
+                    bear: '#c4314b',
+                    'bull-bg': '#dbf3e6',
+                    'bear-bg': '#fce4e8',
+                    neutral: '#787774',
+                },
+                fontFamily: {
+                    sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Noto Sans', 'Helvetica', 'Arial', 'sans-serif'],
+                },
+            }
+        }
+    }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Animations */
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .section-card { animation: fadeSlideIn 0.35s ease-out; }
+        .error-message { animation: fadeSlideIn 0.3s ease-out; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #37352f;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 60px 40px;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 48px;
-        }
-
-        .header h1 {
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: #37352f;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 16px;
-            color: #9b9a97;
-        }
-
-        .header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 16px;
-        }
-
-        .nav-link {
-            font-size: 13px;
-            color: #9b9a97;
-            text-decoration: none;
-            transition: color 0.15s;
-        }
-
-        .nav-link:hover {
-            color: #37352f;
-        }
-
-        /* Search */
-        .search-container {
-            position: relative;
-            margin-bottom: 48px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 16px 20px;
-            font-size: 18px;
-            font-family: inherit;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #37352f;
-            outline: none;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .search-input:focus {
-            border-color: #37352f;
-            box-shadow: 0 0 0 3px rgba(55, 53, 47, 0.08);
-        }
-
-        .search-input::placeholder {
-            color: #c4c3bf;
-        }
-
-        .search-hint {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            color: #c4c3bf;
-            background: #f7f6f3;
-            padding: 3px 8px;
-            border-radius: 4px;
-            pointer-events: none;
-        }
-
-        /* Autocomplete dropdown */
-        .autocomplete-list {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            border: 1px solid #e3e2de;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            z-index: 100;
-            max-height: 320px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .autocomplete-list.visible {
-            display: block;
-        }
-
-        .autocomplete-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: background 0.1s;
-        }
-
-        .autocomplete-item:hover,
-        .autocomplete-item.active {
-            background: #f7f6f3;
-        }
-
-        .autocomplete-symbol {
-            font-weight: 600;
-            font-size: 14px;
-            color: #37352f;
-            min-width: 110px;
-        }
-
-        .autocomplete-name {
-            font-size: 13px;
-            color: #9b9a97;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .autocomplete-item:first-child {
-            border-radius: 0;
-        }
-
-        .autocomplete-item:last-child {
-            border-radius: 0 0 8px 8px;
-        }
-
-        /* Loading */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 32px;
-            color: #9b9a97;
-            font-size: 15px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .loading-dots::after {
-            content: '';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
+        /* Loading dots */
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
         @keyframes dots {
             0%, 20% { content: ''; }
             40% { content: '.'; }
@@ -191,358 +49,73 @@
             80%, 100% { content: '...'; }
         }
 
-        /* Results layout */
-        .results {
-            display: none;
-        }
-
-        .results.active {
-            display: block;
-        }
-
-        .stock-header {
-            margin-bottom: 40px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid #e3e2de;
-        }
-
-        .stock-header h2 {
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .category-title {
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            color: #37352f;
-            margin-top: 44px;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e3e2de;
-        }
-
-        /* Two-column sections grid */
-        .sections-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        /* Cards */
-        .section-card {
-            background: #ffffff;
-            border: 1px solid #e8e7e4;
-            border-radius: 10px;
-            overflow: hidden;
-            animation: fadeSlideIn 0.35s ease-out;
-        }
-
-        .section-card.summary-card {
-            grid-column: 1 / -1;
-            border: 1.5px solid #37352f;
-        }
-
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-header {
-            padding: 12px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #37352f;
-            background: #fafaf9;
-            border-bottom: 1px solid #f0efec;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            user-select: none;
-            transition: background 0.1s;
-        }
-
-        .section-header:hover {
-            background: #f3f2f0;
-        }
-
-        .section-header .chevron {
-            font-size: 9px;
-            color: #c4c3bf;
-            transition: transform 0.2s;
-        }
-
-        .section-card.collapsed .chevron {
-            transform: rotate(-90deg);
-        }
-
-        .section-card.collapsed .section-body {
-            display: none;
-        }
-
-        .section-body {
-            padding: 6px 0;
-        }
-
-        /* Metric rows inside cards */
-        .metric-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 16px;
-            font-size: 13px;
-            transition: background 0.1s;
-        }
-
-        .metric-row:hover {
-            background: #fafaf9;
-        }
-
-        .metric-label {
-            color: #9b9a97;
-            font-size: 12.5px;
-            flex-shrink: 1;
-            min-width: 0;
-        }
-
-        .metric-value {
-            font-weight: 600;
-            color: #37352f;
-            font-size: 13px;
-            text-align: right;
-            flex-shrink: 0;
-            margin-left: 12px;
-        }
-
-        /* Signal pill tags */
-        .signal-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            padding: 1px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            line-height: 1.6;
-            white-space: nowrap;
-        }
-
-        .signal-pill.pill-bullish {
-            background: #dbf3e6;
-            color: #0f7b3f;
-        }
-
-        .signal-pill.pill-bearish {
-            background: #fce4e8;
-            color: #c4314b;
-        }
-
-        .signal-pill.pill-neutral {
-            background: #f0efec;
-            color: #787774;
-        }
-
-        /* Summary badge */
-        .summary-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 3px 10px;
-            border-radius: 5px;
-            font-weight: 700;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .badge-bullish {
-            background: #dbf3e6;
-            color: #0f7b3f;
-        }
-
-        .badge-bearish {
-            background: #fce4e8;
-            color: #c4314b;
-        }
-
-        .badge-neutral {
-            background: #f0efec;
-            color: #787774;
-        }
-
-        /* Error */
-        .error-message {
-            padding: 16px 20px;
-            background: #fce4e8;
-            color: #c4314b;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            animation: fadeSlideIn 0.3s ease-out;
-        }
-
-        /* Market toggle */
-        .market-toggle {
-            display: inline-flex;
-            background: #f0efec;
-            border-radius: 6px;
-            padding: 2px;
-            margin-bottom: 12px;
-        }
-
-        .market-toggle button {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 6px 16px;
-            border: none;
-            border-radius: 4px;
-            background: transparent;
-            color: #9b9a97;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .market-toggle button.active {
-            background: #ffffff;
-            color: #37352f;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .market-toggle button:hover:not(.active) {
-            color: #6b6b6b;
-        }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            .container {
-                padding: 32px 16px;
-            }
-            .header h1 {
-                font-size: 28px;
-            }
-            .search-input {
-                font-size: 16px;
-                padding: 14px 16px;
-            }
-            .sections-grid {
-                grid-template-columns: 1fr;
-            }
-            .stock-header h2 {
-                font-size: 24px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px 12px;
-            }
-            .header {
-                margin-bottom: 24px;
-            }
-            .header h1 {
-                font-size: 22px;
-            }
-            .header p {
-                font-size: 14px;
-            }
-            .search-container {
-                margin-bottom: 24px;
-            }
-            .search-input {
-                font-size: 16px;
-                padding: 12px 14px;
-            }
-            .search-hint {
-                display: none;
-            }
-            .stock-header {
-                margin-bottom: 24px;
-                padding-bottom: 16px;
-            }
-            .stock-header h2 {
-                font-size: 20px;
-            }
-            .category-title {
-                font-size: 14px;
-                margin-top: 28px;
-                margin-bottom: 10px;
-            }
-            .section-header {
-                padding: 10px 12px;
-                font-size: 12px;
-            }
-            .metric-row {
-                padding: 6px 12px;
-            }
-            .metric-label {
-                font-size: 12px;
-            }
-            .metric-value {
-                font-size: 12px;
-            }
-            .signal-pill {
-                font-size: 11px;
-                padding: 1px 6px;
-            }
-            .summary-badge {
-                font-size: 12px;
-            }
-        }
+        /* JS-toggled states */
+        .loading { display: none; }
+        .loading.active { display: block; }
+        .results { display: none; }
+        .results.active { display: block; }
+        .autocomplete-list { display: none; }
+        .autocomplete-list.visible { display: block; }
+        .section-card.collapsed .section-body { display: none; }
+        .section-card.collapsed .chevron { transform: rotate(-90deg); }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-row">
+<body class="font-sans bg-white text-ink leading-relaxed antialiased">
+    <div class="max-w-[900px] mx-auto px-3 py-6 sm:px-5 sm:py-8 lg:px-10 lg:py-[60px]">
+        <!-- Header -->
+        <div class="mb-6 lg:mb-12">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                    <h1>Stock Analyzer</h1>
-                    <p>Technical & fundamental analysis</p>
+                    <h1 class="text-[22px] sm:text-[28px] lg:text-[40px] font-bold -tracking-[0.03em] text-ink mb-1 sm:mb-2">Stock Analyzer</h1>
+                    <p class="text-sm lg:text-base text-muted">Technical & fundamental analysis</p>
                 </div>
-                <div class="header-nav">
-                    <a href="/" class="nav-link">← Dashboard</a>
-                    <a href="/groups" class="nav-link">Group Analysis →</a>
+                <div class="flex gap-4">
+                    <a href="/" class="text-[13px] text-muted no-underline transition-colors hover:text-ink">← Dashboard</a>
+                    <a href="/groups" class="text-[13px] text-muted no-underline transition-colors hover:text-ink">Group Analysis →</a>
                 </div>
             </div>
         </div>
 
-        <div class="search-container">
-            <div class="market-toggle" id="marketToggle">
-                <button class="active" data-market="IN">India</button>
-                <button data-market="US">US</button>
+        <!-- Market toggle -->
+        <div class="relative mb-6 sm:mb-12">
+            <div class="inline-flex bg-wash rounded-md p-0.5 mb-3" id="marketToggle">
+                <button class="active font-sans text-[13px] font-medium px-4 py-1.5 border-none rounded bg-white text-ink shadow-sm cursor-pointer transition-all duration-150" data-market="IN">India</button>
+                <button class="font-sans text-[13px] font-medium px-4 py-1.5 border-none rounded bg-transparent text-muted cursor-pointer transition-all duration-150 hover:text-subtle" data-market="US">US</button>
             </div>
         </div>
 
-        <div class="search-container">
+        <!-- Search -->
+        <div class="relative mb-6 sm:mb-12">
             <input
                 type="text"
-                class="search-input"
+                class="w-full px-4 sm:px-5 py-3 sm:py-4 text-base sm:text-lg font-sans border border-edge rounded-lg bg-white text-ink outline-none transition-all duration-150 focus:border-ink focus:shadow-[0_0_0_3px_rgba(55,53,47,0.08)] placeholder:text-lite"
                 id="symbolInput"
                 placeholder="Enter stock symbol (e.g. RELIANCE, TCS, INFY)"
                 autocomplete="off"
                 spellcheck="false"
             >
-            <span class="search-hint">Enter ↵</span>
-            <div class="autocomplete-list" id="autocompleteList"></div>
+            <span class="hidden sm:inline absolute right-4 top-1/2 -translate-y-1/2 text-xs text-lite bg-tint px-2 py-0.5 rounded pointer-events-none">Enter ↵</span>
+            <div class="autocomplete-list absolute top-full left-0 right-0 bg-white border border-edge border-t-0 rounded-b-lg shadow-lg z-50 max-h-80 overflow-y-auto" id="autocompleteList"></div>
         </div>
 
-        <div class="loading" id="loading">
+        <!-- Loading -->
+        <div class="loading text-center py-8 text-muted text-[15px]" id="loading">
             <span>Fetching data<span class="loading-dots"></span></span>
         </div>
 
+        <!-- Results -->
         <div class="results" id="results">
-            <div class="stock-header" id="stockHeader">
-                <h2 id="stockName"></h2>
+            <div class="mb-6 sm:mb-10 pb-4 sm:pb-6 border-b border-edge" id="stockHeader">
+                <h2 class="text-xl sm:text-2xl lg:text-[32px] font-bold -tracking-[0.02em]" id="stockName"></h2>
             </div>
             <div id="technicalLabel"></div>
-            <div class="sections-grid" id="technicalSections"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="technicalSections"></div>
             <div id="fundamentalLabel"></div>
-            <div class="sections-grid" id="fundamentalSections"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="fundamentalSections"></div>
             <div id="piotroskiLabel"></div>
-            <div class="sections-grid" id="piotroskiSections"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="piotroskiSections"></div>
             <div id="canslimLabel"></div>
-            <div class="sections-grid" id="canslimSections"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="canslimSections"></div>
         </div>
     </div>
 
@@ -577,8 +150,12 @@
         marketToggle.addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-market]');
             if (!btn || btn.classList.contains('active')) return;
-            marketToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            marketToggle.querySelectorAll('button').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-ink', 'shadow-sm');
+                b.classList.add('bg-transparent', 'text-muted');
+            });
+            btn.classList.add('active', 'bg-white', 'text-ink', 'shadow-sm');
+            btn.classList.remove('bg-transparent', 'text-muted');
             selectedMarket = btn.dataset.market;
             input.placeholder = placeholders[selectedMarket] || placeholders.IN;
             input.value = '';
@@ -638,7 +215,7 @@
 
         // Close dropdown on outside click
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-container')) {
+            if (!e.target.closest('.relative')) {
                 hideAutocomplete();
             }
         });
@@ -649,13 +226,13 @@
                 return;
             }
             autocompleteList.innerHTML = items.map((item, i) => `
-                <div class="autocomplete-item${i === activeIndex ? ' active' : ''}" data-index="${i}">
-                    <span class="autocomplete-symbol">${escapeHtml(item.symbol)}</span>
-                    <span class="autocomplete-name">${escapeHtml(item.name)}</span>
+                <div class="px-4 sm:px-5 py-3 cursor-pointer flex items-center gap-3 transition-colors hover:bg-tint ${i === activeIndex ? 'bg-tint' : ''} ${i === items.length - 1 ? 'rounded-b-lg' : ''}" data-index="${i}">
+                    <span class="font-semibold text-sm text-ink min-w-[110px]">${escapeHtml(item.symbol)}</span>
+                    <span class="text-[13px] text-muted whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(item.name)}</span>
                 </div>
             `).join('');
 
-            autocompleteList.querySelectorAll('.autocomplete-item').forEach(el => {
+            autocompleteList.querySelectorAll('[data-index]').forEach(el => {
                 el.addEventListener('click', () => {
                     const idx = parseInt(el.dataset.index);
                     input.value = suggestions[idx].symbol;
@@ -668,8 +245,8 @@
         }
 
         function highlightItem() {
-            autocompleteList.querySelectorAll('.autocomplete-item').forEach((el, i) => {
-                el.classList.toggle('active', i === activeIndex);
+            autocompleteList.querySelectorAll('[data-index]').forEach((el, i) => {
+                el.classList.toggle('bg-tint', i === activeIndex);
             });
         }
 
@@ -697,11 +274,6 @@
             loading.classList.add('active');
             results.classList.add('active');
 
-            let technicalStarted = false;
-            let fundamentalStarted = false;
-            let piotroskiStarted = false;
-            let canslimStarted = false;
-
             const source = new EventSource(`/api/analyze/${encodeURIComponent(symbol)}?market=${selectedMarket}`);
             currentSource = source;
 
@@ -719,7 +291,7 @@
                 const cat = categoryConfig[data.category];
                 if (cat && !cat.started) {
                     cat.started = true;
-                    cat.label.innerHTML = `<div class="category-title">${cat.title}</div>`;
+                    cat.label.innerHTML = `<div class="text-sm sm:text-base font-bold -tracking-[0.01em] text-ink mt-7 sm:mt-11 mb-2.5 sm:mb-3.5 pb-2.5 border-b-2 border-edge">${cat.title}</div>`;
                 }
 
                 const container = cat ? cat.sections : fundamentalSections;
@@ -728,12 +300,9 @@
 
             source.addEventListener('error', (e) => {
                 loading.classList.remove('active');
-                // SSE error event — check if it's a custom error or connection error
-                // Custom errors come through the 'error' event listener below
             });
 
             source.addEventListener('error', (e) => {
-                // Try to parse as custom error
                 try {
                     if (e.data) {
                         const data = JSON.parse(e.data);
@@ -758,35 +327,35 @@
         function createSectionCard(data) {
             const card = document.createElement('div');
             const isSummary = data.is_summary;
-            card.className = `section-card${isSummary ? ' summary-card' : ''}`;
+            card.className = `section-card bg-white border rounded-[10px] overflow-hidden ${isSummary ? 'col-span-1 sm:col-span-2 border-[1.5px] border-ink' : 'border-[#e8e7e4]'}`;
 
             // Header
             const header = document.createElement('div');
-            header.className = 'section-header';
-            header.innerHTML = `<span class="chevron">▼</span> ${escapeHtml(data.section)}`;
+            header.className = 'px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-[13px] font-semibold text-ink bg-[#fafaf9] border-b border-wash cursor-pointer flex items-center gap-1.5 select-none transition-colors hover:bg-wash';
+            header.innerHTML = `<span class="chevron text-[9px] text-lite transition-transform duration-200">▼</span> ${escapeHtml(data.section)}`;
             header.addEventListener('click', () => {
                 card.classList.toggle('collapsed');
             });
 
             // Body
             const body = document.createElement('div');
-            body.className = 'section-body';
+            body.className = 'section-body py-1.5';
 
             for (const row of data.rows) {
                 const rowEl = document.createElement('div');
-                rowEl.className = 'metric-row';
+                rowEl.className = 'flex items-center justify-between px-3 sm:px-4 py-1.5 text-[13px] transition-colors hover:bg-[#fafaf9]';
 
                 if (isSummary) {
                     rowEl.innerHTML = `
-                        <span class="metric-label">${escapeHtml(row.label)}</span>
-                        <span class="summary-badge badge-${row.signal || 'neutral'}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>
+                        <span class="text-muted text-xs sm:text-[12.5px] shrink min-w-0">${escapeHtml(row.label)}</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs sm:text-[13px] font-bold whitespace-nowrap ${row.signal === 'bullish' ? 'bg-bull-bg text-bull' : row.signal === 'bearish' ? 'bg-bear-bg text-bear' : 'bg-wash text-neutral'}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>
                     `;
                 } else {
                     const valueHtml = row.signal
-                        ? `<span class="signal-pill pill-${row.signal}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>`
-                        : `<span class="metric-value">${escapeHtml(row.value)}</span>`;
+                        ? `<span class="inline-flex items-center gap-0.5 px-2 py-px rounded text-[11px] sm:text-xs font-semibold leading-relaxed whitespace-nowrap ${row.signal === 'bullish' ? 'bg-bull-bg text-bull' : row.signal === 'bearish' ? 'bg-bear-bg text-bear' : 'bg-wash text-neutral'}">${signalIcon(row.signal)} ${escapeHtml(row.value)}</span>`
+                        : `<span class="font-semibold text-ink text-xs sm:text-[13px] text-right shrink-0 ml-3">${escapeHtml(row.value)}</span>`;
                     rowEl.innerHTML = `
-                        <span class="metric-label">${escapeHtml(row.label)}</span>
+                        <span class="text-muted text-xs sm:text-[12.5px] shrink min-w-0">${escapeHtml(row.label)}</span>
                         ${valueHtml}
                     `;
                 }
@@ -801,7 +370,7 @@
 
         function showError(message) {
             const el = document.createElement('div');
-            el.className = 'error-message';
+            el.className = 'error-message px-4 sm:px-5 py-3 sm:py-4 bg-bear-bg text-bear rounded-lg text-sm mb-4';
             el.textContent = message;
             results.insertBefore(el, results.firstChild.nextSibling);
         }

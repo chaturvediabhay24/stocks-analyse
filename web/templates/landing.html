@@ -4,411 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    ink: '#37352f',
+                    muted: '#9b9a97',
+                    subtle: '#6b6b6b',
+                    lite: '#c4c3bf',
+                    edge: '#e3e2de',
+                    surface: '#fbfbfa',
+                    tint: '#f7f6f3',
+                    wash: '#f0efec',
+                    bull: '#0f7b3f',
+                    bear: '#c4314b',
+                    'bull-bg': '#dbf3e6',
+                    'bear-bg': '#fce4e8',
+                },
+                fontFamily: {
+                    sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Noto Sans', 'Helvetica', 'Arial', 'sans-serif'],
+                },
+            }
+        }
+    }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Sort arrow pseudo-elements */
+        .results-table th.sort-asc::after { content: ' \2191'; }
+        .results-table th.sort-desc::after { content: ' \2193'; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #37352f;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 60px 40px;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 48px;
-        }
-
-        .header h1 {
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: #37352f;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 16px;
-            color: #9b9a97;
-        }
-
-        /* Navigation */
-        .nav-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 40px;
-        }
-
-        .nav-btn {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 8px 18px;
-            border: 1px solid #e3e2de;
-            border-radius: 6px;
-            background: #ffffff;
-            color: #6b6b6b;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.15s;
-        }
-
-        .nav-btn:hover {
-            border-color: #37352f;
-            color: #37352f;
-        }
-
-        .nav-btn.active {
-            background: #37352f;
-            color: #ffffff;
-            border-color: #37352f;
-        }
-
-        /* Tables grid */
-        .tables-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-
-        .table-panel {
-            min-width: 0;
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .panel-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .panel-flag {
-            font-size: 13px;
-            color: #9b9a97;
-            font-weight: 500;
-        }
-
-        /* Progress */
-        .panel-progress {
-            margin-bottom: 16px;
-            display: none;
-        }
-
-        .panel-progress.active {
-            display: block;
-        }
-
-        .panel-progress-text {
-            font-size: 13px;
-            color: #9b9a97;
-            margin-bottom: 6px;
-        }
-
-        .panel-progress-bar-bg {
-            width: 100%;
-            height: 4px;
-            background: #f0efec;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .panel-progress-bar-fill {
-            height: 100%;
-            background: #37352f;
-            border-radius: 2px;
-            transition: width 0.3s ease;
-            width: 0%;
-        }
-
-        /* Results table */
-        .results-table-wrapper {
-            overflow-x: auto;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-        }
-
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .results-table th {
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #9b9a97;
-            background: #fbfbfa;
-            border-bottom: 1px solid #e3e2de;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .results-table th:hover {
-            color: #37352f;
-        }
-
-        .results-table th.sort-asc::after {
-            content: ' \2191';
-        }
-
-        .results-table th.sort-desc::after {
-            content: ' \2193';
-        }
-
-        .results-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid #f0efec;
-            white-space: nowrap;
-        }
-
-        .results-table tbody tr:hover {
-            background: #fbfbfa;
-        }
-
-        .results-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .rank-cell {
-            font-weight: 700;
-            color: #37352f;
-            text-align: center;
-            width: 40px;
-        }
-
-        .rank-top {
-            color: #0f7b3f;
-        }
-
-        .symbol-cell {
-            font-weight: 600;
-            color: #37352f;
-        }
-
-        .symbol-cell a {
-            color: inherit;
-            text-decoration: none;
-            border-bottom: 1px dashed #c4c3bf;
-            transition: border-color 0.15s;
-        }
-
-        .symbol-cell a:hover {
-            border-color: #37352f;
-        }
-
-        .name-cell {
-            color: #6b6b6b;
-            max-width: 150px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .num-cell {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .signal-bullish {
-            color: #0f7b3f;
-        }
-
-        .signal-bearish {
-            color: #c4314b;
-        }
-
-        /* Empty / error */
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: #9b9a97;
-            font-size: 14px;
-        }
-
-        .error-message {
-            padding: 12px 16px;
-            background: #fce4e8;
-            color: #c4314b;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-
+        /* Animation */
         @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .results-table-wrapper.loaded { animation: fadeSlideIn 0.4s ease-out; }
 
-        .results-table-wrapper.loaded {
-            animation: fadeSlideIn 0.4s ease-out;
-        }
+        /* JS-toggled states */
+        .panel-progress { display: none; }
+        .panel-progress.active { display: block; }
 
-        /* Mobile tab toggle — hidden on desktop */
-        .mobile-tab-toggle {
-            display: none;
-            background: #f0efec;
-            border-radius: 6px;
-            padding: 2px;
-            margin-bottom: 20px;
-        }
-
-        .mobile-tab-toggle button {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 8px 0;
-            border: none;
-            border-radius: 4px;
-            background: transparent;
-            color: #9b9a97;
-            cursor: pointer;
-            transition: all 0.15s;
-            flex: 1;
-        }
-
-        .mobile-tab-toggle button.active {
-            background: #ffffff;
-            color: #37352f;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .mobile-tab-toggle button:hover:not(.active) {
-            color: #6b6b6b;
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
-            .tables-grid {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-            .container {
-                padding: 32px 20px;
-            }
-            .header h1 {
-                font-size: 28px;
-            }
-            .mobile-tab-toggle {
-                display: flex;
-            }
-            .table-panel {
-                display: none;
-            }
-            .table-panel.mobile-visible {
-                display: block;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px 12px;
-            }
-            .header {
-                margin-bottom: 24px;
-            }
-            .header h1 {
-                font-size: 22px;
-            }
-            .header p {
-                font-size: 14px;
-            }
-            .nav-bar {
-                gap: 6px;
-                margin-bottom: 24px;
-            }
-            .nav-btn {
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-            .panel-header h2 {
-                font-size: 17px;
-            }
-            .results-table {
-                font-size: 11px;
-            }
-            .results-table th {
-                padding: 8px 8px;
-                font-size: 9px;
-            }
-            .results-table td {
-                padding: 7px 8px;
-            }
-            .name-cell {
-                max-width: 90px;
-            }
+        /* Mobile panel toggle (below lg) */
+        @media (max-width: 1023px) {
+            .table-panel { display: none; }
+            .table-panel.mobile-visible { display: block; }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Stock Analyzer</h1>
-            <p>Magic Formula rankings at a glance</p>
+<body class="font-sans bg-white text-ink leading-relaxed antialiased">
+    <div class="max-w-[1200px] mx-auto px-3 py-6 sm:px-5 sm:py-8 lg:px-10 lg:py-[60px]">
+        <!-- Header -->
+        <div class="mb-6 lg:mb-12">
+            <h1 class="text-[22px] sm:text-[28px] lg:text-[40px] font-bold -tracking-[0.03em] text-ink mb-2">Stock Analyzer</h1>
+            <p class="text-sm lg:text-base text-muted">Magic Formula rankings at a glance</p>
         </div>
 
-        <div class="nav-bar">
-            <a href="/" class="nav-btn active">Dashboard</a>
-            <a href="/groups" class="nav-btn">Group Analysis</a>
-            <a href="/analyze" class="nav-btn">Individual Analysis</a>
+        <!-- Nav -->
+        <div class="flex gap-1.5 sm:gap-2 mb-6 lg:mb-10">
+            <a href="/" class="text-xs sm:text-[13px] font-medium px-3 sm:px-[18px] py-2 border border-ink rounded-md bg-ink text-white no-underline transition-all duration-150">Dashboard</a>
+            <a href="/groups" class="text-xs sm:text-[13px] font-medium px-3 sm:px-[18px] py-2 border border-edge rounded-md bg-white text-subtle no-underline transition-all duration-150 hover:border-ink hover:text-ink">Group Analysis</a>
+            <a href="/analyze" class="text-xs sm:text-[13px] font-medium px-3 sm:px-[18px] py-2 border border-edge rounded-md bg-white text-subtle no-underline transition-all duration-150 hover:border-ink hover:text-ink">Individual Analysis</a>
         </div>
 
-        <div class="mobile-tab-toggle" id="mobileTabToggle">
-            <button class="active" data-panel="IN">Nifty 50 (India)</button>
-            <button data-panel="US">NASDAQ 100 (US)</button>
+        <!-- Mobile tab toggle (hidden on desktop) -->
+        <div class="flex lg:hidden bg-wash rounded-md p-0.5 mb-5" id="mobileTabToggle">
+            <button class="flex-1 text-[13px] font-medium py-2 border-none rounded bg-white text-ink shadow-sm cursor-pointer transition-all duration-150 active" data-panel="IN">Nifty 50 (India)</button>
+            <button class="flex-1 text-[13px] font-medium py-2 border-none rounded bg-transparent text-muted cursor-pointer transition-all duration-150" data-panel="US">NASDAQ 100 (US)</button>
         </div>
 
-        <div class="tables-grid">
+        <!-- Tables grid -->
+        <div class="lg:grid lg:grid-cols-2 lg:gap-10">
             <!-- India: Nifty 50 -->
-            <div class="table-panel mobile-visible" id="panelIN">
-                <div class="panel-header">
-                    <h2>Nifty 50</h2>
-                    <span class="panel-flag">India (NSE)</span>
+            <div class="table-panel mobile-visible min-w-0" id="panelIN">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-[17px] sm:text-lg lg:text-xl font-bold -tracking-[0.02em]">Nifty 50</h2>
+                    <span class="text-[13px] text-muted font-medium">India (NSE)</span>
                 </div>
-                <div class="panel-progress active" id="progressIN">
-                    <div class="panel-progress-text" id="progressTextIN">Loading...</div>
-                    <div class="panel-progress-bar-bg">
-                        <div class="panel-progress-bar-fill" id="progressFillIN"></div>
+                <div class="panel-progress active mb-4" id="progressIN">
+                    <div class="text-[13px] text-muted mb-1.5" id="progressTextIN">Loading...</div>
+                    <div class="w-full h-1 bg-wash rounded-sm overflow-hidden">
+                        <div class="h-full bg-ink rounded-sm transition-[width] duration-300 ease-out w-0" id="progressFillIN"></div>
                     </div>
                 </div>
-                <div class="results-table-wrapper" id="tableWrapperIN">
-                    <table class="results-table" id="tableIN">
+                <div class="results-table-wrapper overflow-x-auto border border-edge rounded-lg" id="tableWrapperIN">
+                    <table class="results-table w-full border-collapse text-[11px] sm:text-xs" id="tableIN">
                         <thead>
                             <tr>
-                                <th data-key="rank" class="sort-asc">Rank</th>
-                                <th data-key="symbol">Symbol</th>
-                                <th data-key="name">Name</th>
-                                <th data-key="earnings_yield">EY %</th>
-                                <th data-key="roic">ROIC %</th>
-                                <th data-key="combined_score">Score</th>
-                                <th data-key="price">Price</th>
-                                <th data-key="pe">PE</th>
+                                <th class="sort-asc px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="rank">Rank</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="symbol">Symbol</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="name">Name</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="earnings_yield">EY %</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="roic">ROIC %</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="combined_score">Score</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="price">Price</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="pe">PE</th>
                             </tr>
                         </thead>
                         <tbody id="bodyIN"></tbody>
@@ -417,29 +108,29 @@
             </div>
 
             <!-- US: NASDAQ 100 -->
-            <div class="table-panel" id="panelUS">
-                <div class="panel-header">
-                    <h2>NASDAQ 100</h2>
-                    <span class="panel-flag">US</span>
+            <div class="table-panel min-w-0" id="panelUS">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-[17px] sm:text-lg lg:text-xl font-bold -tracking-[0.02em]">NASDAQ 100</h2>
+                    <span class="text-[13px] text-muted font-medium">US</span>
                 </div>
-                <div class="panel-progress active" id="progressUS">
-                    <div class="panel-progress-text" id="progressTextUS">Loading...</div>
-                    <div class="panel-progress-bar-bg">
-                        <div class="panel-progress-bar-fill" id="progressFillUS"></div>
+                <div class="panel-progress active mb-4" id="progressUS">
+                    <div class="text-[13px] text-muted mb-1.5" id="progressTextUS">Loading...</div>
+                    <div class="w-full h-1 bg-wash rounded-sm overflow-hidden">
+                        <div class="h-full bg-ink rounded-sm transition-[width] duration-300 ease-out w-0" id="progressFillUS"></div>
                     </div>
                 </div>
-                <div class="results-table-wrapper" id="tableWrapperUS">
-                    <table class="results-table" id="tableUS">
+                <div class="results-table-wrapper overflow-x-auto border border-edge rounded-lg" id="tableWrapperUS">
+                    <table class="results-table w-full border-collapse text-[11px] sm:text-xs" id="tableUS">
                         <thead>
                             <tr>
-                                <th data-key="rank" class="sort-asc">Rank</th>
-                                <th data-key="symbol">Symbol</th>
-                                <th data-key="name">Name</th>
-                                <th data-key="earnings_yield">EY %</th>
-                                <th data-key="roic">ROIC %</th>
-                                <th data-key="combined_score">Score</th>
-                                <th data-key="price">Price</th>
-                                <th data-key="pe">PE</th>
+                                <th class="sort-asc px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="rank">Rank</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="symbol">Symbol</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="name">Name</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="earnings_yield">EY %</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="roic">ROIC %</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="combined_score">Score</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="price">Price</th>
+                                <th class="px-2 sm:px-3 py-2 text-left font-semibold text-[9px] sm:text-[10px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="pe">PE</th>
                             </tr>
                         </thead>
                         <tbody id="bodyUS"></tbody>
@@ -489,15 +180,15 @@
         function fillTable(panel, data) {
             panel.body.innerHTML = data.map(s => {
                 const isTop = s.rank <= 5;
-                return `<tr>
-                    <td class="rank-cell ${isTop ? 'rank-top' : ''}">${s.rank}</td>
-                    <td class="symbol-cell"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${panel.market}" target="_blank">${escapeHtml(s.symbol)}</a></td>
-                    <td class="name-cell" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
-                    <td class="num-cell ${s.earnings_yield > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.earnings_yield.toFixed(2)}%</td>
-                    <td class="num-cell ${s.roic > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.roic.toFixed(2)}%</td>
-                    <td class="num-cell" style="font-weight:600">${s.combined_score}</td>
-                    <td class="num-cell">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
-                    <td class="num-cell">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
+                return `<tr class="hover:bg-surface">
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap font-bold text-ink text-center w-10 ${isTop ? 'text-bull' : ''}">${s.rank}</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap font-semibold text-ink"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${panel.market}" target="_blank" class="text-inherit no-underline border-b border-dashed border-lite transition-colors hover:border-ink">${escapeHtml(s.symbol)}</a></td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-subtle max-w-[90px] sm:max-w-[150px] overflow-hidden text-ellipsis" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-right tabular-nums ${s.earnings_yield > 0 ? 'text-bull' : 'text-bear'}">${s.earnings_yield.toFixed(2)}%</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-right tabular-nums ${s.roic > 0 ? 'text-bull' : 'text-bear'}">${s.roic.toFixed(2)}%</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-right tabular-nums font-semibold">${s.combined_score}</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
+                    <td class="px-2 sm:px-3 py-1.5 sm:py-2 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
                 </tr>`;
             }).join('');
         }
@@ -563,7 +254,7 @@
                                     fillTable(panel, panel.rankings);
                                     panel.tableWrapper.classList.add('loaded');
                                 } else if (currentEvent === 'error') {
-                                    panel.body.innerHTML = `<tr><td colspan="8" class="empty-state">${escapeHtml(data.message)}</td></tr>`;
+                                    panel.body.innerHTML = `<tr><td colspan="8" class="text-center py-12 px-5 text-muted text-sm">${escapeHtml(data.message)}</td></tr>`;
                                 }
                             } catch (_) {}
                             currentEvent = null;
@@ -571,7 +262,7 @@
                     }
                 }
             } catch (err) {
-                panel.body.innerHTML = `<tr><td colspan="8" class="empty-state">Failed to load</td></tr>`;
+                panel.body.innerHTML = `<tr><td colspan="8" class="text-center py-12 px-5 text-muted text-sm">Failed to load</td></tr>`;
             }
 
             panel.progress.classList.remove('active');
@@ -581,8 +272,14 @@
         document.getElementById('mobileTabToggle').addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-panel]');
             if (!btn || btn.classList.contains('active')) return;
-            document.querySelectorAll('#mobileTabToggle button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            // Update button styles
+            document.querySelectorAll('#mobileTabToggle button').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-ink', 'shadow-sm');
+                b.classList.add('bg-transparent', 'text-muted');
+            });
+            btn.classList.add('active', 'bg-white', 'text-ink', 'shadow-sm');
+            btn.classList.remove('bg-transparent', 'text-muted');
+            // Toggle panels
             document.querySelectorAll('.table-panel').forEach(p => p.classList.remove('mobile-visible'));
             document.getElementById('panel' + btn.dataset.panel).classList.add('mobile-visible');
         });

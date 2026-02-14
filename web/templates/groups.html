@@ -4,657 +4,132 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Group Analysis — Stock Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    ink: '#37352f',
+                    muted: '#9b9a97',
+                    subtle: '#6b6b6b',
+                    lite: '#c4c3bf',
+                    edge: '#e3e2de',
+                    surface: '#fbfbfa',
+                    tint: '#f7f6f3',
+                    wash: '#f0efec',
+                    bull: '#0f7b3f',
+                    bear: '#c4314b',
+                    'bull-bg': '#dbf3e6',
+                    'bear-bg': '#fce4e8',
+                    neutral: '#787774',
+                },
+                fontFamily: {
+                    sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Noto Sans', 'Helvetica', 'Arial', 'sans-serif'],
+                },
+            }
+        }
+    }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Sort arrow pseudo-elements */
+        .results-table th.sort-asc::after { content: ' \2191'; }
+        .results-table th.sort-desc::after { content: ' \2193'; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #37352f;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 60px 40px;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 48px;
-        }
-
-        .header h1 {
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: #37352f;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 16px;
-            color: #9b9a97;
-        }
-
-        .nav-link {
-            font-size: 13px;
-            color: #9b9a97;
-            text-decoration: none;
-            transition: color 0.15s;
-        }
-
-        .nav-link:hover {
-            color: #37352f;
-        }
-
-        .header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        /* Market toggle */
-        .market-toggle {
-            display: inline-flex;
-            background: #f0efec;
-            border-radius: 6px;
-            padding: 2px;
-            margin-bottom: 12px;
-        }
-
-        .market-toggle button {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 6px 16px;
-            border: none;
-            border-radius: 4px;
-            background: transparent;
-            color: #9b9a97;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .market-toggle button.active {
-            background: #ffffff;
-            color: #37352f;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .market-toggle button:hover:not(.active) {
-            color: #6b6b6b;
-        }
-
-        /* Controls */
-        .controls {
-            margin-bottom: 32px;
-        }
-
-        /* Group cards */
-        .group-selector {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-
-        .group-card {
-            padding: 14px 24px;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.15s;
-            background: #ffffff;
-        }
-
-        .group-card:hover {
-            border-color: #37352f;
-        }
-
-        .group-card.selected {
-            border-color: #37352f;
-            background: #fbfbfa;
-            box-shadow: 0 0 0 1px #37352f;
-        }
-
-        .group-card-name {
-            font-weight: 600;
-            font-size: 15px;
-            color: #37352f;
-        }
-
-        .group-card-count {
-            font-size: 12px;
-            color: #9b9a97;
-            margin-top: 2px;
-        }
-
-        .run-btn {
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 10px 28px;
-            border: none;
-            border-radius: 6px;
-            background: #37352f;
-            color: #ffffff;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .run-btn:hover:not(:disabled) {
-            background: #1a1a1a;
-        }
-
-        .run-btn:disabled {
-            background: #c4c3bf;
-            cursor: not-allowed;
-        }
-
-        /* Progress */
-        .progress-container {
-            display: none;
-            margin-bottom: 32px;
-        }
-
-        .progress-container.active {
-            display: block;
-        }
-
-        .progress-text {
-            font-size: 14px;
-            color: #6b6b6b;
-            margin-bottom: 8px;
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 6px;
-            background: #f0efec;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: #37352f;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-            width: 0%;
-        }
-
-        .progress-skipped {
-            font-size: 12px;
-            color: #9b9a97;
-            margin-top: 6px;
-        }
-
-        /* Results table */
-        .results-container {
-            display: none;
-        }
-
-        .results-container.active {
-            display: block;
-            animation: fadeSlideIn 0.4s ease-out;
-        }
-
+        /* Animations */
         @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .results-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .results-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .results-count {
-            font-size: 13px;
-            color: #9b9a97;
-        }
-
-        .results-table-wrapper {
-            overflow-x: auto;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-        }
-
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .results-table th {
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #9b9a97;
-            background: #fbfbfa;
-            border-bottom: 1px solid #e3e2de;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .results-table th:hover {
-            color: #37352f;
-        }
-
-        .results-table th.sort-asc::after {
-            content: ' ↑';
-        }
-
-        .results-table th.sort-desc::after {
-            content: ' ↓';
-        }
-
-        .results-table td {
-            padding: 10px 16px;
-            border-bottom: 1px solid #f0efec;
-            white-space: nowrap;
-        }
-
-        .results-table tbody tr:hover {
-            background: #fbfbfa;
-        }
-
-        .results-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .rank-cell {
-            font-weight: 700;
-            color: #37352f;
-            text-align: center;
-            width: 50px;
-        }
-
-        .rank-top {
-            color: #0f7b3f;
-        }
-
-        .symbol-cell {
-            font-weight: 600;
-            color: #37352f;
-        }
-
-        .symbol-cell a {
-            color: inherit;
-            text-decoration: none;
-            border-bottom: 1px dashed #c4c3bf;
-            transition: border-color 0.15s;
-        }
-
-        .symbol-cell a:hover {
-            border-color: #37352f;
-        }
-
-        .name-cell {
-            color: #6b6b6b;
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .num-cell {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .signal-bullish {
-            color: #0f7b3f;
-        }
-
-        .signal-bearish {
-            color: #c4314b;
-        }
-
-        /* Stock editor */
-        .stock-editor {
-            display: none;
-            margin-bottom: 24px;
-            padding: 20px;
-            border: 1px solid #e3e2de;
-            border-radius: 8px;
-            background: #fbfbfa;
-        }
-
-        .stock-editor.active {
-            display: block;
-            animation: fadeSlideIn 0.3s ease-out;
-        }
-
-        .stock-editor-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .stock-editor-header span {
-            font-size: 13px;
-            color: #9b9a97;
-        }
-
-        .stock-editor-header strong {
-            font-size: 14px;
-            font-weight: 600;
-            color: #37352f;
-        }
-
-        .stock-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .stock-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            background: #ffffff;
-            border: 1px solid #e3e2de;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #37352f;
-        }
-
-        .stock-chip .remove-chip {
-            cursor: pointer;
-            color: #9b9a97;
-            font-size: 14px;
-            line-height: 1;
-            margin-left: 2px;
-            transition: color 0.15s;
-        }
-
-        .stock-chip .remove-chip:hover {
-            color: #c4314b;
-        }
-
-        .stock-add-row {
-            display: flex;
-            gap: 8px;
-            position: relative;
-        }
-
-        .stock-add-row input {
-            font-family: inherit;
-            font-size: 13px;
-            padding: 6px 12px;
-            border: 1px solid #e3e2de;
-            border-radius: 4px;
-            outline: none;
-            width: 160px;
-            text-transform: uppercase;
-        }
-
-        .stock-add-row input:focus {
-            border-color: #37352f;
-        }
-
-        /* Autocomplete dropdown */
-        .add-autocomplete-list {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 320px;
-            background: #ffffff;
-            border: 1px solid #e3e2de;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            z-index: 100;
-            max-height: 240px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .add-autocomplete-list.visible {
-            display: block;
-        }
-
-        .add-autocomplete-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: background 0.1s;
-            font-size: 13px;
-        }
-
-        .add-autocomplete-item:hover,
-        .add-autocomplete-item.active {
-            background: #f7f6f3;
-        }
-
-        .add-autocomplete-symbol {
-            font-weight: 600;
-            color: #37352f;
-            min-width: 80px;
-        }
-
-        .add-autocomplete-name {
-            color: #9b9a97;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .add-autocomplete-item:last-child {
-            border-radius: 0 0 8px 8px;
-        }
-
-        .stock-add-row button {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 6px 14px;
-            border: 1px solid #e3e2de;
-            border-radius: 4px;
-            background: #ffffff;
-            color: #37352f;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .stock-add-row button:hover {
-            border-color: #37352f;
-            background: #f0efec;
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: #9b9a97;
-            font-size: 15px;
-        }
-
-        /* Error */
-        .error-message {
-            padding: 16px 20px;
-            background: #fce4e8;
-            color: #c4314b;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            animation: fadeSlideIn 0.3s ease-out;
-        }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            .container {
-                padding: 32px 20px;
-            }
-            .header h1 {
-                font-size: 28px;
-            }
-            .header-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            .group-selector {
-                flex-direction: column;
-            }
-            .group-card {
-                padding: 12px 18px;
-            }
-            .stock-editor {
-                padding: 16px;
-            }
-            .run-btn {
-                width: 100%;
-            }
-            .results-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 4px;
-            }
-            .results-header h2 {
-                font-size: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px 12px;
-            }
-            .header {
-                margin-bottom: 24px;
-            }
-            .header h1 {
-                font-size: 22px;
-            }
-            .header p {
-                font-size: 14px;
-            }
-            .group-card-name {
-                font-size: 14px;
-            }
-            .results-table {
-                font-size: 12px;
-            }
-            .results-table th {
-                padding: 8px 10px;
-                font-size: 10px;
-            }
-            .results-table td {
-                padding: 8px 10px;
-            }
-            .name-cell {
-                max-width: 100px;
-            }
-            .stock-add-row input {
-                flex: 1;
-                min-width: 0;
-                width: auto;
-            }
-        }
+        /* JS-toggled states */
+        .progress-container { display: none; }
+        .progress-container.active { display: block; }
+        .results-container { display: none; }
+        .results-container.active { display: block; animation: fadeSlideIn 0.4s ease-out; }
+        .stock-editor { display: none; }
+        .stock-editor.active { display: block; animation: fadeSlideIn 0.3s ease-out; }
+        .add-autocomplete-list { display: none; }
+        .add-autocomplete-list.visible { display: block; }
+        .error-message { animation: fadeSlideIn 0.3s ease-out; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-row">
+<body class="font-sans bg-white text-ink leading-relaxed antialiased">
+    <div class="max-w-[1100px] mx-auto px-3 py-6 sm:px-5 sm:py-8 lg:px-10 lg:py-[60px]">
+        <!-- Header -->
+        <div class="mb-6 lg:mb-12">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                    <h1>Group Analysis</h1>
-                    <p>Magic Formula ranking across stock indices</p>
+                    <h1 class="text-[22px] sm:text-[28px] lg:text-[40px] font-bold -tracking-[0.03em] text-ink mb-1 sm:mb-2">Group Analysis</h1>
+                    <p class="text-sm lg:text-base text-muted">Magic Formula ranking across stock indices</p>
                 </div>
-                <div style="display:flex;gap:16px">
-                    <a href="/" class="nav-link">← Dashboard</a>
-                    <a href="/analyze" class="nav-link">Individual Analysis →</a>
+                <div class="flex gap-4">
+                    <a href="/" class="text-[13px] text-muted no-underline transition-colors hover:text-ink">← Dashboard</a>
+                    <a href="/analyze" class="text-[13px] text-muted no-underline transition-colors hover:text-ink">Individual Analysis →</a>
                 </div>
             </div>
         </div>
 
-        <div class="controls">
-            <div class="market-toggle" id="marketToggle">
-                <button class="active" data-market="IN">India</button>
-                <button data-market="US">US</button>
+        <!-- Controls -->
+        <div class="mb-8">
+            <!-- Market toggle -->
+            <div class="inline-flex bg-wash rounded-md p-0.5 mb-3" id="marketToggle">
+                <button class="active font-sans text-[13px] font-medium px-4 py-1.5 border-none rounded bg-white text-ink shadow-sm cursor-pointer transition-all duration-150" data-market="IN">India</button>
+                <button class="font-sans text-[13px] font-medium px-4 py-1.5 border-none rounded bg-transparent text-muted cursor-pointer transition-all duration-150 hover:text-subtle" data-market="US">US</button>
             </div>
 
-            <div class="group-selector" id="groupSelector"></div>
+            <!-- Group selector -->
+            <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-6" id="groupSelector"></div>
 
-            <div class="stock-editor" id="stockEditor">
-                <div class="stock-editor-header">
-                    <strong>Stocks</strong>
-                    <span id="stockCount"></span>
+            <!-- Stock editor -->
+            <div class="stock-editor mb-6 p-4 sm:p-5 border border-edge rounded-lg bg-surface" id="stockEditor">
+                <div class="flex items-center justify-between mb-3">
+                    <strong class="text-sm font-semibold text-ink">Stocks</strong>
+                    <span class="text-[13px] text-muted" id="stockCount"></span>
                 </div>
-                <div class="stock-chips" id="stockChips"></div>
-                <div class="stock-add-row">
-                    <input type="text" id="addStockInput" placeholder="e.g. RELIANCE" autocomplete="off" spellcheck="false">
-                    <button id="addStockBtn">Add</button>
-                    <div class="add-autocomplete-list" id="addAutocompleteList"></div>
+                <div class="flex flex-wrap gap-1.5 mb-3 max-h-[200px] overflow-y-auto" id="stockChips"></div>
+                <div class="flex gap-2 relative">
+                    <input type="text" id="addStockInput" placeholder="e.g. RELIANCE" autocomplete="off" spellcheck="false"
+                        class="font-sans text-[13px] px-3 py-1.5 border border-edge rounded outline-none flex-1 sm:flex-none sm:w-40 uppercase focus:border-ink min-w-0">
+                    <button id="addStockBtn" class="font-sans text-[13px] font-medium px-3.5 py-1.5 border border-edge rounded bg-white text-ink cursor-pointer transition-all duration-150 hover:border-ink hover:bg-wash">Add</button>
+                    <div class="add-autocomplete-list absolute top-full left-0 w-full sm:w-80 bg-white border border-edge border-t-0 rounded-b-lg shadow-lg z-50 max-h-60 overflow-y-auto" id="addAutocompleteList"></div>
                 </div>
             </div>
 
-            <button class="run-btn" id="runBtn" disabled>Run Magic Formula</button>
+            <!-- Run button -->
+            <button class="font-sans text-sm font-semibold px-7 py-2.5 border-none rounded-md bg-ink text-white cursor-pointer transition-all duration-150 w-full sm:w-auto hover:bg-[#1a1a1a] disabled:bg-lite disabled:cursor-not-allowed" id="runBtn" disabled>Run Magic Formula</button>
         </div>
 
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-text" id="progressText">Analyzing stocks...</div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="progressFill"></div>
+        <!-- Progress -->
+        <div class="progress-container mb-8" id="progressContainer">
+            <div class="text-sm text-subtle mb-2" id="progressText">Analyzing stocks...</div>
+            <div class="w-full h-1.5 bg-wash rounded overflow-hidden">
+                <div class="h-full bg-ink rounded transition-[width] duration-300 ease-out w-0" id="progressFill"></div>
             </div>
-            <div class="progress-skipped" id="progressSkipped"></div>
+            <div class="text-xs text-muted mt-1.5" id="progressSkipped"></div>
         </div>
 
+        <!-- Results -->
         <div class="results-container" id="resultsContainer">
-            <div class="results-header">
-                <h2 id="resultsTitle">Rankings</h2>
-                <span class="results-count" id="resultsCount"></span>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-5">
+                <h2 class="text-xl sm:text-2xl font-bold -tracking-[0.02em]" id="resultsTitle">Rankings</h2>
+                <span class="text-[13px] text-muted" id="resultsCount"></span>
             </div>
-            <div class="results-table-wrapper">
-                <table class="results-table" id="resultsTable">
+            <div class="overflow-x-auto border border-edge rounded-lg">
+                <table class="results-table w-full border-collapse text-xs sm:text-[13px]" id="resultsTable">
                     <thead>
                         <tr>
-                            <th data-key="rank" class="sort-asc">Rank</th>
-                            <th data-key="symbol">Symbol</th>
-                            <th data-key="name">Name</th>
-                            <th data-key="earnings_yield">EY %</th>
-                            <th data-key="roic">ROIC %</th>
-                            <th data-key="ey_rank">EY Rank</th>
-                            <th data-key="roic_rank">ROIC Rank</th>
-                            <th data-key="combined_score">Score</th>
-                            <th data-key="price">Price</th>
-                            <th data-key="pe">PE</th>
-                            <th data-key="market_cap">Mkt Cap</th>
+                            <th class="sort-asc px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="rank">Rank</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="symbol">Symbol</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="name">Name</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="earnings_yield">EY %</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="roic">ROIC %</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="ey_rank">EY Rank</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="roic_rank">ROIC Rank</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="combined_score">Score</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="price">Price</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="pe">PE</th>
+                            <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-muted bg-surface border-b border-edge cursor-pointer select-none whitespace-nowrap hover:text-ink" data-key="market_cap">Mkt Cap</th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody"></tbody>
@@ -694,8 +169,12 @@
         marketToggle.addEventListener('click', (e) => {
             const btn = e.target.closest('button[data-market]');
             if (!btn || btn.classList.contains('active')) return;
-            marketToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            marketToggle.querySelectorAll('button').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-ink', 'shadow-sm');
+                b.classList.add('bg-transparent', 'text-muted');
+            });
+            btn.classList.add('active', 'bg-white', 'text-ink', 'shadow-sm');
+            btn.classList.remove('bg-transparent', 'text-muted');
             selectedMarket = btn.dataset.market;
             selectedGroup = null;
             editableSymbols = [];
@@ -714,25 +193,26 @@
                 const groups = await res.json();
                 renderGroups(groups);
             } catch (err) {
-                groupSelector.innerHTML = '<div class="empty-state">Failed to load groups</div>';
+                groupSelector.innerHTML = '<div class="text-center py-12 px-5 text-muted text-[15px]">Failed to load groups</div>';
             }
         }
 
         function renderGroups(groups) {
             groupSelector.innerHTML = groups.map(g => `
-                <div class="group-card" data-id="${escapeHtml(g.id)}">
-                    <div class="group-card-name">${escapeHtml(g.name)}</div>
-                    <div class="group-card-count">${g.count} stocks</div>
+                <div class="group-card px-4 sm:px-6 py-3 sm:py-3.5 border border-edge rounded-lg cursor-pointer transition-all duration-150 bg-white hover:border-ink" data-id="${escapeHtml(g.id)}">
+                    <div class="font-semibold text-sm sm:text-[15px] text-ink">${escapeHtml(g.name)}</div>
+                    <div class="text-xs text-muted mt-0.5">${g.count} stocks</div>
                 </div>
             `).join('');
 
             groupSelector.querySelectorAll('.group-card').forEach(card => {
                 card.addEventListener('click', async () => {
-                    groupSelector.querySelectorAll('.group-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
+                    groupSelector.querySelectorAll('.group-card').forEach(c => {
+                        c.classList.remove('border-ink', 'bg-surface', 'shadow-[0_0_0_1px_#37352f]');
+                    });
+                    card.classList.add('border-ink', 'bg-surface', 'shadow-[0_0_0_1px_#37352f]');
                     selectedGroup = card.dataset.id;
 
-                    // Fetch symbols for this group and populate editor
                     try {
                         const res = await fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/symbols?market=${selectedMarket}`);
                         const data = await res.json();
@@ -750,9 +230,9 @@
         // Stock editor
         function renderStockChips() {
             stockChips.innerHTML = editableSymbols.map(s => `
-                <span class="stock-chip">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-edge rounded text-xs font-medium text-ink">
                     ${escapeHtml(s)}
-                    <span class="remove-chip" data-symbol="${escapeHtml(s)}">&times;</span>
+                    <span class="remove-chip cursor-pointer text-muted text-sm leading-none ml-0.5 transition-colors hover:text-bear" data-symbol="${escapeHtml(s)}">&times;</span>
                 </span>
             `).join('');
             stockCount.textContent = `${editableSymbols.length} stocks`;
@@ -818,7 +298,7 @@
         });
 
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.stock-add-row')) {
+            if (!e.target.closest('.relative') && !e.target.closest('.stock-editor')) {
                 hideAddAutocomplete();
             }
         });
@@ -829,13 +309,13 @@
                 return;
             }
             addAutocompleteList.innerHTML = items.map((item, i) => `
-                <div class="add-autocomplete-item${i === addActiveIndex ? ' active' : ''}" data-index="${i}">
-                    <span class="add-autocomplete-symbol">${escapeHtml(item.symbol)}</span>
-                    <span class="add-autocomplete-name">${escapeHtml(item.name)}</span>
+                <div class="px-3 py-2 cursor-pointer flex items-center gap-2.5 transition-colors text-[13px] hover:bg-tint ${i === addActiveIndex ? 'bg-tint' : ''} ${i === items.length - 1 ? 'rounded-b-lg' : ''}" data-index="${i}">
+                    <span class="font-semibold text-ink min-w-[80px]">${escapeHtml(item.symbol)}</span>
+                    <span class="text-muted whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(item.name)}</span>
                 </div>
             `).join('');
 
-            addAutocompleteList.querySelectorAll('.add-autocomplete-item').forEach(el => {
+            addAutocompleteList.querySelectorAll('[data-index]').forEach(el => {
                 el.addEventListener('click', () => {
                     const idx = parseInt(el.dataset.index);
                     addStockInput.value = addSuggestions[idx].symbol;
@@ -848,8 +328,8 @@
         }
 
         function highlightAddItem() {
-            addAutocompleteList.querySelectorAll('.add-autocomplete-item').forEach((el, i) => {
-                el.classList.toggle('active', i === addActiveIndex);
+            addAutocompleteList.querySelectorAll('[data-index]').forEach((el, i) => {
+                el.classList.toggle('bg-tint', i === addActiveIndex);
             });
         }
 
@@ -891,7 +371,6 @@
 
             let skipped = 0;
 
-            // Use fetch + ReadableStream to consume SSE from POST endpoint
             try {
                 const response = await fetch('/api/magic-formula', {
                     method: 'POST',
@@ -908,9 +387,8 @@
                     if (done) break;
                     buffer += decoder.decode(value, { stream: true });
 
-                    // Parse SSE lines from buffer
                     const lines = buffer.split('\n');
-                    buffer = lines.pop(); // keep incomplete line in buffer
+                    buffer = lines.pop();
 
                     let currentEvent = null;
                     for (const line of lines) {
@@ -952,12 +430,11 @@
         function renderResults() {
             if (rankings.length === 0) {
                 resultsContainer.classList.add('active');
-                resultsBody.innerHTML = '<tr><td colspan="11" class="empty-state">No stocks with sufficient data</td></tr>';
+                resultsBody.innerHTML = '<tr><td colspan="11" class="text-center py-12 px-5 text-muted text-[15px]">No stocks with sufficient data</td></tr>';
                 return;
             }
 
-            // Find selected group name
-            const selectedCard = groupSelector.querySelector('.group-card.selected .group-card-name');
+            const selectedCard = groupSelector.querySelector('.group-card.border-ink .font-semibold');
             const groupName = selectedCard ? selectedCard.textContent : 'Group';
             resultsTitle.textContent = `${groupName} — Magic Formula`;
             resultsCount.textContent = `${rankings.length} stocks ranked`;
@@ -969,18 +446,18 @@
         function fillTable(data) {
             resultsBody.innerHTML = data.map((s, i) => {
                 const isTop = s.rank <= 5;
-                return `<tr>
-                    <td class="rank-cell ${isTop ? 'rank-top' : ''}">${s.rank}</td>
-                    <td class="symbol-cell"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${selectedMarket}" target="_blank">${escapeHtml(s.symbol)}</a></td>
-                    <td class="name-cell" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
-                    <td class="num-cell ${s.earnings_yield > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.earnings_yield.toFixed(2)}%</td>
-                    <td class="num-cell ${s.roic > 0 ? 'signal-bullish' : 'signal-bearish'}">${s.roic.toFixed(2)}%</td>
-                    <td class="num-cell">${s.ey_rank}</td>
-                    <td class="num-cell">${s.roic_rank}</td>
-                    <td class="num-cell" style="font-weight:600">${s.combined_score}</td>
-                    <td class="num-cell">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
-                    <td class="num-cell">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
-                    <td class="num-cell">${escapeHtml(s.market_cap)}</td>
+                return `<tr class="hover:bg-surface">
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap font-bold text-ink text-center w-[50px] ${isTop ? 'text-bull' : ''}">${s.rank}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap font-semibold text-ink"><a href="/analyze?symbol=${encodeURIComponent(s.symbol)}&market=${selectedMarket}" target="_blank" class="text-inherit no-underline border-b border-dashed border-lite transition-colors hover:border-ink">${escapeHtml(s.symbol)}</a></td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-subtle max-w-[100px] sm:max-w-[200px] overflow-hidden text-ellipsis" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums ${s.earnings_yield > 0 ? 'text-bull' : 'text-bear'}">${s.earnings_yield.toFixed(2)}%</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums ${s.roic > 0 ? 'text-bull' : 'text-bear'}">${s.roic.toFixed(2)}%</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.ey_rank}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.roic_rank}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums font-semibold">${s.combined_score}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.price != null ? s.price.toFixed(2) : 'N/A'}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums">${s.pe != null ? s.pe.toFixed(1) : 'N/A'}</td>
+                    <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-wash whitespace-nowrap text-right tabular-nums">${escapeHtml(s.market_cap)}</td>
                 </tr>`;
             }).join('');
         }
@@ -996,13 +473,11 @@
                     currentSortDir = 'asc';
                 }
 
-                // Update header classes
                 resultsTable.querySelectorAll('th').forEach(h => {
                     h.classList.remove('sort-asc', 'sort-desc');
                 });
                 th.classList.add(currentSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
 
-                // Sort
                 const sorted = [...rankings].sort((a, b) => {
                     let va = a[key], vb = b[key];
                     if (typeof va === 'string') {
@@ -1020,7 +495,7 @@
 
         function showError(message) {
             const el = document.createElement('div');
-            el.className = 'error-message';
+            el.className = 'error-message px-4 sm:px-5 py-3 sm:py-4 bg-bear-bg text-bear rounded-lg text-sm mb-4';
             el.textContent = message;
             progressContainer.insertAdjacentElement('afterend', el);
         }
