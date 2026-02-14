@@ -43,6 +43,30 @@
             color: #9b9a97;
         }
 
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-link {
+            font-size: 13px;
+            color: #9b9a97;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .nav-link:hover {
+            color: #37352f;
+        }
+
         /* Search */
         .search-container {
             position: relative;
@@ -405,20 +429,80 @@
             .sections-grid {
                 grid-template-columns: 1fr;
             }
+            .stock-header h2 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 12px;
+            }
+            .header {
+                margin-bottom: 24px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .header p {
+                font-size: 14px;
+            }
+            .search-container {
+                margin-bottom: 24px;
+            }
+            .search-input {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+            .search-hint {
+                display: none;
+            }
+            .stock-header {
+                margin-bottom: 24px;
+                padding-bottom: 16px;
+            }
+            .stock-header h2 {
+                font-size: 20px;
+            }
+            .category-title {
+                font-size: 14px;
+                margin-top: 28px;
+                margin-bottom: 10px;
+            }
+            .section-header {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            .metric-row {
+                padding: 6px 12px;
+            }
+            .metric-label {
+                font-size: 12px;
+            }
+            .metric-value {
+                font-size: 12px;
+            }
+            .signal-pill {
+                font-size: 11px;
+                padding: 1px 6px;
+            }
+            .summary-badge {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="header-row">
                 <div>
                     <h1>Stock Analyzer</h1>
                     <p>Technical & fundamental analysis</p>
                 </div>
-                <div style="display:flex;gap:16px">
-                    <a href="/" class="nav-link" style="font-size:13px;color:#9b9a97;text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='#37352f'" onmouseout="this.style.color='#9b9a97'">← Dashboard</a>
-                    <a href="/groups" style="font-size:13px;color:#9b9a97;text-decoration:none;transition:color 0.15s" onmouseover="this.style.color='#37352f'" onmouseout="this.style.color='#9b9a97'">Group Analysis →</a>
+                <div class="header-nav">
+                    <a href="/" class="nav-link">← Dashboard</a>
+                    <a href="/groups" class="nav-link">Group Analysis →</a>
                 </div>
             </div>
         </div>
