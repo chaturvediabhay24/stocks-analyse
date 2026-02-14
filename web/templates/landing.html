@@ -270,17 +270,59 @@
             animation: fadeSlideIn 0.4s ease-out;
         }
 
+        /* Mobile tab toggle — hidden on desktop */
+        .mobile-tab-toggle {
+            display: none;
+            background: #f0efec;
+            border-radius: 6px;
+            padding: 2px;
+            margin-bottom: 20px;
+        }
+
+        .mobile-tab-toggle button {
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 0;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: #9b9a97;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex: 1;
+        }
+
+        .mobile-tab-toggle button.active {
+            background: #ffffff;
+            color: #37352f;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .mobile-tab-toggle button:hover:not(.active) {
+            color: #6b6b6b;
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .tables-grid {
                 grid-template-columns: 1fr;
-                gap: 48px;
+                gap: 0;
             }
             .container {
                 padding: 32px 20px;
             }
             .header h1 {
                 font-size: 28px;
+            }
+            .mobile-tab-toggle {
+                display: flex;
+            }
+            .table-panel {
+                display: none;
+            }
+            .table-panel.mobile-visible {
+                display: block;
             }
         }
 
@@ -304,9 +346,6 @@
             .nav-btn {
                 font-size: 12px;
                 padding: 8px 12px;
-            }
-            .tables-grid {
-                gap: 32px;
             }
             .panel-header h2 {
                 font-size: 17px;
@@ -340,9 +379,14 @@
             <a href="/analyze" class="nav-btn">Individual Analysis</a>
         </div>
 
+        <div class="mobile-tab-toggle" id="mobileTabToggle">
+            <button class="active" data-panel="IN">Nifty 50 (India)</button>
+            <button data-panel="US">NASDAQ 100 (US)</button>
+        </div>
+
         <div class="tables-grid">
             <!-- India: Nifty 50 -->
-            <div class="table-panel" id="panelIN">
+            <div class="table-panel mobile-visible" id="panelIN">
                 <div class="panel-header">
                     <h2>Nifty 50</h2>
                     <span class="panel-flag">India (NSE)</span>
@@ -532,6 +576,16 @@
 
             panel.progress.classList.remove('active');
         }
+
+        // Mobile tab toggle
+        document.getElementById('mobileTabToggle').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-panel]');
+            if (!btn || btn.classList.contains('active')) return;
+            document.querySelectorAll('#mobileTabToggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.table-panel').forEach(p => p.classList.remove('mobile-visible'));
+            document.getElementById('panel' + btn.dataset.panel).classList.add('mobile-visible');
+        });
 
         // Init: load both panels in parallel
         setupSorting(panels.IN);
