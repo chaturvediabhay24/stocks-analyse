@@ -127,10 +127,11 @@ async def _magic_formula_stream(symbols: list[str], market: str = "IN",
     """Process magic formula with parallel batch fetching."""
 
     # Return cached snapshot from DB if one exists for this session
+    # and the symbol list hasn't changed (e.g. user added/removed stocks)
     if group_id:
         session_date = _last_refresh_boundary(market).strftime("%Y-%m-%d")
         existing = await get_snapshot(group_id, market, session_date)
-        if existing and existing.get("rankings"):
+        if existing and existing.get("rankings") and sorted(existing.get("symbols", [])) == sorted(symbols):
             yield {
                 "event": "result",
                 "data": json.dumps({"type": "result", "rankings": existing["rankings"],
