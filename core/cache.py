@@ -15,8 +15,8 @@ IST = ZoneInfo("Asia/Kolkata")
 
 # Refresh boundaries in IST
 REFRESH_TIMES = {
-    "IN": time(16, 0),  # 4:00 PM IST — after Indian market close
-    "US": time(5, 0),   # 5:00 AM IST — after US market close
+    "IN": time(3, 0),  # 3:00 AM IST — after Indian market close
+    # "US": time(5, 0),   # 5:00 AM IST — after US market close
 }
 
 # {cache_key: (data, fetched_at)}
