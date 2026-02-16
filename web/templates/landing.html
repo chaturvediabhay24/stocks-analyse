@@ -59,6 +59,7 @@
         <div class="mb-6 lg:mb-12">
             <h1 class="text-[22px] sm:text-[28px] lg:text-[40px] font-bold -tracking-[0.03em] text-ink mb-2">Stock Analyzer</h1>
             <p class="text-sm lg:text-base text-muted">Magic Formula rankings at a glance</p>
+            <p class="text-xs text-lite mt-1" id="todayDate"></p>
         </div>
 
         <!-- Nav -->
@@ -141,6 +142,8 @@
     </div>
 
     <script>
+        document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
         // Panel config
         const panels = {
             IN: {

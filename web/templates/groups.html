@@ -62,6 +62,7 @@
                 <div>
                     <h1 class="text-[22px] sm:text-[28px] lg:text-[40px] font-bold -tracking-[0.03em] text-ink mb-1 sm:mb-2">Group Analysis</h1>
                     <p class="text-sm lg:text-base text-muted">Magic Formula ranking across stock indices</p>
+                    <p class="text-xs text-lite mt-1" id="todayDate"></p>
                 </div>
                 <div class="flex gap-4">
                     <a href="/" class="text-[13px] text-muted no-underline transition-colors hover:text-ink">← Dashboard</a>
@@ -139,6 +140,8 @@
     </div>
 
     <script>
+        document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
         const marketToggle = document.getElementById('marketToggle');
         const groupSelector = document.getElementById('groupSelector');
         const stockEditor = document.getElementById('stockEditor');
