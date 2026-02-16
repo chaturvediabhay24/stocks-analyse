@@ -144,6 +144,28 @@
     <script>
         document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Cache helpers
+        const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+        function getCache(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (Date.now() - obj.ts > CACHE_TTL_MS) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                return obj.rankings;
+            } catch (_) { return null; }
+        }
+
+        function setCache(key, rankings) {
+            try {
+                localStorage.setItem(key, JSON.stringify({ rankings, ts: Date.now() }));
+            } catch (_) {}
+        }
+
         // Panel config
         const panels = {
             IN: {
@@ -226,6 +248,17 @@
         }
 
         async function loadPanel(panel) {
+            const cacheKey = `mf_${panel.groupId}_${panel.market}`;
+            const cached = getCache(cacheKey);
+
+            if (cached) {
+                panel.rankings = cached;
+                fillTable(panel, panel.rankings);
+                panel.tableWrapper.classList.add('loaded');
+                panel.progress.classList.remove('active');
+                return;
+            }
+
             try {
                 const response = await fetch(`/api/groups/${panel.groupId}/magic-formula?market=${panel.market}`);
                 const reader = response.body.getReader();
@@ -256,6 +289,7 @@
                                     panel.rankings = data.rankings;
                                     fillTable(panel, panel.rankings);
                                     panel.tableWrapper.classList.add('loaded');
+                                    setCache(cacheKey, data.rankings);
                                 } else if (currentEvent === 'error') {
                                     panel.body.innerHTML = `<tr><td colspan="8" class="text-center py-12 px-5 text-muted text-sm">${escapeHtml(data.message)}</td></tr>`;
                                 }

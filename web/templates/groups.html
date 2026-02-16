@@ -142,6 +142,28 @@
     <script>
         document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Cache helpers
+        const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+        function getCache(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (Date.now() - obj.ts > CACHE_TTL_MS) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                return obj.rankings;
+            } catch (_) { return null; }
+        }
+
+        function setCache(key, rankings) {
+            try {
+                localStorage.setItem(key, JSON.stringify({ rankings, ts: Date.now() }));
+            } catch (_) {}
+        }
+
         const marketToggle = document.getElementById('marketToggle');
         const groupSelector = document.getElementById('groupSelector');
         const stockEditor = document.getElementById('stockEditor');
@@ -363,6 +385,16 @@
         async function startAnalysis() {
             if (currentSource) currentSource.close();
 
+            const cacheKey = `mf_custom_${selectedMarket}_${[...editableSymbols].sort().join(',')}`;
+            const cached = getCache(cacheKey);
+
+            if (cached) {
+                rankings = cached;
+                resultsBody.innerHTML = '';
+                renderResults();
+                return;
+            }
+
             // Reset UI
             resultsContainer.classList.remove('active');
             progressContainer.classList.add('active');
@@ -412,6 +444,7 @@
                                 } else if (currentEvent === 'result') {
                                     rankings = data.rankings;
                                     renderResults();
+                                    setCache(cacheKey, data.rankings);
                                 } else if (currentEvent === 'error') {
                                     showError(data.message);
                                 } else if (currentEvent === 'done') {
