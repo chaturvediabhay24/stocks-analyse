@@ -99,6 +99,17 @@
 
             <!-- Run button -->
             <button class="font-sans text-sm font-semibold px-7 py-2.5 border-none rounded-md bg-ink text-white cursor-pointer transition-all duration-150 w-full sm:w-auto hover:bg-[#1a1a1a] disabled:bg-lite disabled:cursor-not-allowed" id="runBtn" disabled>Run Magic Formula</button>
+
+            <!-- History -->
+            <div class="history-section mt-5 p-4 border border-edge rounded-lg bg-surface" id="historySection" style="display:none;">
+                <div class="flex items-center gap-2 mb-2.5">
+                    <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-[13px] font-semibold text-ink">Past Snapshots</span>
+                </div>
+                <div id="historyContent">
+                    <p class="text-xs text-muted">No snapshots yet. Run Magic Formula to save today's snapshot.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Progress -->
@@ -181,9 +192,12 @@
         const resultsCount = document.getElementById('resultsCount');
         const resultsBody = document.getElementById('resultsBody');
         const resultsTable = document.getElementById('resultsTable');
+        const historySection = document.getElementById('historySection');
+        const historyChips = document.getElementById('historyChips');
 
         let selectedMarket = 'IN';
         let selectedGroup = null;
+        let viewingHistorical = false;
         let editableSymbols = [];
         let currentSource = null;
         let rankings = [];
@@ -203,7 +217,9 @@
             selectedMarket = btn.dataset.market;
             selectedGroup = null;
             editableSymbols = [];
+            viewingHistorical = false;
             stockEditor.classList.remove('active');
+            historySection.style.display = 'none';
             loadGroups();
         });
 
@@ -239,14 +255,22 @@
                     selectedGroup = card.dataset.id;
 
                     try {
-                        const res = await fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/symbols?market=${selectedMarket}`);
-                        const data = await res.json();
+                        const [symRes, histRes] = await Promise.all([
+                            fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/symbols?market=${selectedMarket}`),
+                            fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/history?market=${selectedMarket}`),
+                        ]);
+                        const data = await symRes.json();
                         editableSymbols = [...data.symbols];
                         renderStockChips();
                         stockEditor.classList.add('active');
                         runBtn.disabled = false;
+
+                        historySection.style.display = 'block';
+                        const histData = await histRes.json();
+                        renderHistory(histData.dates || []);
                     } catch (err) {
                         stockEditor.classList.remove('active');
+                        historySection.style.display = 'none';
                     }
                 });
             });
@@ -407,10 +431,11 @@
             let skipped = 0;
 
             try {
+                viewingHistorical = false;
                 const response = await fetch('/api/magic-formula', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ symbols: editableSymbols, market: selectedMarket }),
+                    body: JSON.stringify({ symbols: editableSymbols, market: selectedMarket, group_id: selectedGroup }),
                 });
 
                 const reader = response.body.getReader();
@@ -443,6 +468,11 @@
                                     }
                                 } else if (currentEvent === 'result') {
                                     rankings = data.rankings;
+                                    if (data.from_cache) {
+                                        // Results came from DB — show as today's cached snapshot
+                                        const today = new Date().toISOString().slice(0, 10);
+                                        viewingHistorical = today;
+                                    }
                                     renderResults();
                                     setCache(cacheKey, data.rankings);
                                 } else if (currentEvent === 'error') {
@@ -461,6 +491,15 @@
 
             progressContainer.classList.remove('active');
             runBtn.disabled = false;
+
+            // Refresh history list after a successful run
+            if (selectedGroup) {
+                try {
+                    const histRes = await fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/history?market=${selectedMarket}`);
+                    const histData = await histRes.json();
+                    renderHistory(histData.dates || []);
+                } catch (_) {}
+            }
         }
 
         function renderResults() {
@@ -472,8 +511,14 @@
 
             const selectedCard = groupSelector.querySelector('.group-card.border-ink .font-semibold');
             const groupName = selectedCard ? selectedCard.textContent : 'Group';
-            resultsTitle.textContent = `${groupName} — Magic Formula`;
-            resultsCount.textContent = `${rankings.length} stocks ranked`;
+            if (viewingHistorical) {
+                const label = new Date(viewingHistorical + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                resultsTitle.textContent = `${groupName} — Magic Formula`;
+                resultsCount.textContent = `${rankings.length} stocks ranked · Snapshot from ${label}`;
+            } else {
+                resultsTitle.textContent = `${groupName} — Magic Formula`;
+                resultsCount.textContent = `${rankings.length} stocks ranked`;
+            }
 
             fillTable(rankings);
             resultsContainer.classList.add('active');
@@ -528,6 +573,47 @@
                 fillTable(sorted);
             });
         });
+
+        function renderHistory(dates) {
+            const content = document.getElementById('historyContent');
+            if (dates.length === 0) {
+                content.innerHTML = '<p class="text-xs text-muted">No snapshots yet. Run Magic Formula to save today\'s snapshot.</p>';
+                return;
+            }
+            content.innerHTML = '<div class="flex gap-2 flex-wrap" id="historyChips"></div>';
+            const chips = document.getElementById('historyChips');
+            chips.innerHTML = dates.map(d => {
+                const label = new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                return `<button class="history-chip font-sans text-xs px-3 py-1.5 border border-edge rounded-md bg-white text-subtle cursor-pointer transition-all duration-150 hover:border-ink hover:text-ink" data-date="${escapeHtml(d)}">${label}</button>`;
+            }).join('');
+
+            chips.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    chips.querySelectorAll('.history-chip').forEach(c => {
+                        c.classList.remove('border-ink', 'text-ink', 'bg-wash', 'font-semibold');
+                    });
+                    btn.classList.add('border-ink', 'text-ink', 'bg-wash', 'font-semibold');
+                    loadSnapshot(btn.dataset.date);
+                });
+            });
+        }
+
+        async function loadSnapshot(date) {
+            if (!selectedGroup) return;
+            try {
+                const res = await fetch(`/api/groups/${encodeURIComponent(selectedGroup)}/snapshot?market=${selectedMarket}&date=${encodeURIComponent(date)}`);
+                const data = await res.json();
+                if (data.error) { showError(data.error); return; }
+
+                viewingHistorical = date;
+                rankings = data.rankings;
+                resultsBody.innerHTML = '';
+                progressContainer.classList.remove('active');
+                renderResults();
+            } catch (err) {
+                showError('Failed to load snapshot: ' + err.message);
+            }
+        }
 
         function showError(message) {
             const el = document.createElement('div');

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import sys
 from pathlib import Path
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -11,12 +15,20 @@ from sse_starlette.sse import EventSourceResponse
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.analysis import technical_analysis, fundamental_analysis, piotroski_fscore, canslim_analysis
+from core.cache import _last_refresh_boundary
 from core.data_fetcher import fetch_stock_data, fetch_stock_info, fetch_stock_financials
+from core.db import save_snapshot, get_snapshot, list_snapshot_dates, ensure_indexes
 from core.tickers import search_tickers
 from core.stock_groups import get_groups, get_group
 from core.group_analysis import _compute_magic_formula_metrics
 
-app = FastAPI(title="Stock Analyzer")
+@asynccontextmanager
+async def lifespan(app):
+    await ensure_indexes()
+    yield
+
+
+app = FastAPI(title="Stock Analyzer", lifespan=lifespan)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -110,8 +122,26 @@ async def group_symbols(group_id: str, market: str = "IN"):
     return {"symbols": group["symbols"]}
 
 
-async def _magic_formula_stream(symbols: list[str], market: str = "IN"):
+async def _magic_formula_stream(symbols: list[str], market: str = "IN",
+                                group_id: str | None = None):
     """Process magic formula with parallel batch fetching."""
+
+    # Return cached snapshot from DB if one exists for this session
+    if group_id:
+        session_date = _last_refresh_boundary(market).strftime("%Y-%m-%d")
+        existing = await get_snapshot(group_id, market, session_date)
+        if existing and existing.get("rankings"):
+            yield {
+                "event": "result",
+                "data": json.dumps({"type": "result", "rankings": existing["rankings"],
+                                    "from_cache": True}),
+            }
+            yield {
+                "event": "done",
+                "data": json.dumps({"status": "complete"}),
+            }
+            return
+
     total = len(symbols)
     stock_data = []
 
@@ -180,6 +210,11 @@ async def _magic_formula_stream(symbols: list[str], market: str = "IN"):
             "data": json.dumps({"type": "result", "rankings": rankings}),
         }
 
+        # Auto-save snapshot to MongoDB
+        if group_id:
+            session_date = _last_refresh_boundary(market).strftime("%Y-%m-%d")
+            await save_snapshot(group_id, market, session_date, symbols, rankings)
+
     yield {
         "event": "done",
         "data": json.dumps({"status": "complete"}),
@@ -192,7 +227,9 @@ async def group_magic_formula(group_id: str, market: str = "IN"):
     if not group:
         return {"error": f"Group '{group_id}' not found for market '{market}'"}
 
-    return EventSourceResponse(_magic_formula_stream(group["symbols"], market=market))
+    return EventSourceResponse(
+        _magic_formula_stream(group["symbols"], market=market, group_id=group_id)
+    )
 
 
 @app.post("/api/magic-formula")
@@ -200,8 +237,31 @@ async def custom_magic_formula(request: Request):
     body = await request.json()
     symbols = body.get("symbols", [])
     market = body.get("market", "IN")
+    group_id = body.get("group_id")
 
     if not symbols:
         return {"error": "No symbols provided"}
 
-    return EventSourceResponse(_magic_formula_stream(symbols, market=market))
+    return EventSourceResponse(
+        _magic_formula_stream(symbols, market=market, group_id=group_id)
+    )
+
+
+@app.get("/api/groups/{group_id}/history")
+async def group_history(group_id: str, market: str = "IN"):
+    dates = await list_snapshot_dates(group_id, market)
+    return {"dates": dates}
+
+
+@app.get("/api/groups/{group_id}/snapshot")
+async def group_snapshot(group_id: str, market: str = "IN", date: str = ""):
+    if not date:
+        return {"error": "date query parameter is required"}
+    snapshot = await get_snapshot(group_id, market, date)
+    if not snapshot:
+        return {"error": "Snapshot not found"}
+    return {
+        "session_date": snapshot["session_date"],
+        "rankings": snapshot["rankings"],
+        "symbols": snapshot.get("symbols", []),
+    }
